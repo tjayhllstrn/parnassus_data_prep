@@ -12,11 +12,11 @@ void check_classID(const char* filename){
     int truth_pid[kNmax];
     int reco_pid[kNmax];
     tree->SetBranchAddress("ntruth",&ntruth);
-    tree->SetBranchAddress("nreco",&nreco);
+    tree->SetBranchAddress("npflow",&nreco);
     tree->SetBranchAddress("truth_class",truth_class);
-    tree->SetBranchAddress("reco_class",reco_class);
+    tree->SetBranchAddress("pflow_class",reco_class);
     tree->SetBranchAddress("truth_pid",truth_pid);
-    tree->SetBranchAddress("reco_pid",reco_pid);
+    tree->SetBranchAddress("pflow_pid",reco_pid);
     int nentries = tree->GetEntries();
     for(int i = 0; i < nentries; i++){
         tree->GetEntry(i);
@@ -27,7 +27,7 @@ void check_classID(const char* filename){
         }
         for(int j = 0; j < nreco; j++){
             if(reco_class[j] < 0){
-                std::cout << "Reco Entry: " << i << " Particle: " << j << " PID: " << reco_pid[j] << " Class: " << reco_class[j] << std::endl;
+                std::cout << "pflow Entry: " << i << " Particle: " << j << " PID: " << reco_pid[j] << " Class: " << reco_class[j] << std::endl;
             }
         }
     }
