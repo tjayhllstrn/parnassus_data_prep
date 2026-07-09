@@ -8,7 +8,6 @@
 
 // clas12root -l -b -q 'macros/hipo2tree_parnassus.C("/cache/clas12/rg-a/production/montecarlo/clasdis_pass2/fa18_inb/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001.root",100)'
 
-// /w/hallb-scshelf2102/clas12/users/tjhellst/clas-ana-scaffold-tyler/
 int hipo2tree_parnassus(const char* hipoFile = "",
     const char* outputFile = "",
     const int maxEvents = 100){
@@ -34,6 +33,7 @@ int hipo2tree_parnassus(const char* hipoFile = "",
 
     // Add Analysis Objects
     // -------------------------------------
+    CutManager _cm = CutManager();
     CLAS12Ana clas12ana = CLAS12Ana(_c12);
     clas12ana.set_run_config(_c12); //grabs the event number index, run number index, and torus info index, saving it to the corresponding object private methods for clas12ana
 
@@ -60,6 +60,7 @@ int hipo2tree_parnassus(const char* hipoFile = "",
         clas12ana.get_event_info(_c12, event_info); //this line fills event_info with the relevant properties of that event based found in constants.h
         event_info.uID = whileidx; //keeps track of the iteration in the event_info method
         whileidx++;
+        _cm.set_run(event_info.run); //sets relevant runinfo for the cutmanager class to use 
 
         //colect reconstructed particle info
         vec_particles = clas12ana.load_reco_particles(_c12);
@@ -70,9 +71,15 @@ int hipo2tree_parnassus(const char* hipoFile = "",
             vec_particles[idx_scattered_ele].is_scattered_electron = 1;
             clas12ana.fill_reco_event_variables(reco_event, vec_particles);
         }
+        if (idx_scattered_ele == -1 && vec_particles.size() > 0) {
+            vec_particles[0].is_scattered_electron = -1;
+        }
+        
+        vec_particles = _cm.filter_particles(vec_particles);
+        
         //collect MC particle information
         vec_mcparticles = clas12ana.load_mc_particles(_c12);
-        // clas12ana.fill_mc_event_variables(mc_event,vec_mcparticles);
+        clas12ana.fill_mc_event_variables(mc_event,vec_mcparticles);
         
         //then fill the tree with the vector of particles, event, and event_info
         treeReco->FillTree(vec_particles, reco_event, event_info);

@@ -31,8 +31,10 @@ std::pair<double, double> get_branch_range(TTree* tree, const std::string& branc
     double minimum = tree->GetMinimum(branch_name.c_str());
     double maximum = tree->GetMaximum(branch_name.c_str());
 
-    if (!std::isfinite(minimum) || !std::isfinite(maximum)) {
+    if (!std::isfinite(minimum)){
         minimum = 0.0;
+    }
+    if (!std::isfinite(maximum)) {
         maximum = 1.0;
     }
 
@@ -298,6 +300,7 @@ void plot_prepped_data(const char* filename){
     std::vector<std::string> vars_to_plot = {"pt", "phi", "eta", "vx", "vy", "vz"};
     std::vector<std::string> x_labels = {"p_{T} [GeV/c]", "#phi [rad]", "#eta", "v_{x} [cm]", "v_{y} [cm]", "v_{z} [cm]"};
     std::vector<std::pair<double, double>> val_ranges {{-0.1,2}, {-3.14159, 3.14159}, {-1, 5}, {-4, 4}, {-4, 4}, {-10, 10}};
+    
 
     std::unique_ptr<TFile> input_file(TFile::Open(filename, "READ"));
     if (!input_file || input_file->IsZombie()) {
@@ -317,9 +320,9 @@ void plot_prepped_data(const char* filename){
 
     for (size_t i = 0; i < vars_to_plot.size(); ++i) {    
         draw_comparison_plot(tree,
-                            "reco_" + vars_to_plot[i],
+                            "pflow_" + vars_to_plot[i],
                             "truth_" + vars_to_plot[i],
-                            "reco vs truth " + vars_to_plot[i],
+                            "pflow vs truth " + vars_to_plot[i],
                             x_labels[i],
                             outdir + "/compare_" + vars_to_plot[i],
                             val_ranges[i].first,
@@ -327,17 +330,17 @@ void plot_prepped_data(const char* filename){
     }
 
     draw_comparison_plot(tree,
-                         "nreco",
+                         "npflow",
                          "ntruth",
-                         "nreco vs ntruth",
+                         "npflow vs ntruth",
                          "multiplicity",
-                         outdir + "/compare_nreco_ntruth",
+                         outdir + "/compare_npflow_ntruth",
                          -999,-999,20);
 
-    auto reco_class_hist = build_category_histogram(tree, "reco_class", "hreco_class");
+    auto reco_class_hist = build_category_histogram(tree, "pflow_class", "hreco_class");
     auto truth_class_hist = build_category_histogram(tree, "truth_class", "htruth_class");
-    auto reco_pid_hist = build_category_histogram(tree, "reco_pid", "hreco_pid");
-    auto truth_pid_hist = build_category_histogram(tree, "truth_pid", "htruth_pid");
+    auto reco_pid_hist = build_category_histogram(tree, "pflow_pdgId", "hreco_pid");
+    auto truth_pid_hist = build_category_histogram(tree, "truth_pdgId", "htruth_pid");
 
     draw_pie_comparison(reco_class_hist.get(),
                         truth_class_hist.get(),

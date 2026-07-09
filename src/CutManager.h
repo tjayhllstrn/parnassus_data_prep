@@ -24,8 +24,8 @@ class CutManager{
  protected:
   // Protected member functions
   bool apply_electron_cuts(part);
-  bool apply_pion_cuts(part,part);
-  bool apply_photon_cuts(part,part);
+  bool apply_pion_cuts(part,part,bool);
+  bool apply_photon_cuts(part,part,bool);
   bool DC_fiducial_cut(part);
   bool DC_fiducial_cut_theta_phi(part);
   bool DC_fiducial_cut_XY(part);

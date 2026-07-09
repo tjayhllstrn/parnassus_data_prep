@@ -514,12 +514,12 @@ class DihadronTree : public BaseTree {
 class ParnassusTree : public BaseTree {
     private:
         const static int kNmax = 100;
-        int ntruth, nreco, eventNumber;
+        int ntruth, npflow, eventNumber;
 
-        double reco_pt[kNmax], reco_phi[kNmax], reco_eta[kNmax], reco_vx[kNmax], reco_vy[kNmax], reco_vz[kNmax];
-        int reco_class[kNmax], reco_pid[kNmax];
+        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax];
+        int pflow_class[kNmax], pflow_pdgId[kNmax];
         double truth_pt[kNmax], truth_eta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax];
-        int truth_class[kNmax], truth_pid[kNmax];
+        int truth_class[kNmax], truth_pdgId[kNmax];
 
         Kinematics kin;
 
@@ -543,16 +543,16 @@ class ParnassusTree : public BaseTree {
         void CreateBranches() override {  
             tree->Branch("eventNumber",&eventNumber,"eventNumber/I");
             tree->Branch("ntruth",&ntruth,"ntruth/I");
-            tree->Branch("nreco",&nreco,"nreco/I");
+            tree->Branch("npflow",&npflow,"npflow/I");
             
-            tree->Branch("reco_pt", reco_pt, "reco_pt[nreco]/D");
-            tree->Branch("reco_phi", reco_phi, "reco_phi[nreco]/D");
-            tree->Branch("reco_eta", reco_eta, "reco_eta[nreco]/D");
-            tree->Branch("reco_vx", reco_vx, "reco_vx[nreco]/D");
-            tree->Branch("reco_vy", reco_vy, "reco_vy[nreco]/D"); 
-            tree->Branch("reco_vz", reco_vz, "reco_vz[nreco]/D"); 
-            tree->Branch("reco_class", reco_class, "reco_class[nreco]/I");
-            tree->Branch("reco_pid", reco_pid, "reco_pid[nreco]/I");
+            tree->Branch("pflow_pt", pflow_pt, "pflow_pt[npflow]/D");
+            tree->Branch("pflow_phi", pflow_phi, "pflow_phi[npflow]/D");
+            tree->Branch("pflow_eta", pflow_eta, "pflow_eta[npflow]/D");
+            tree->Branch("pflow_vx", pflow_vx, "pflow_vx[npflow]/D");
+            tree->Branch("pflow_vy", pflow_vy, "pflow_vy[npflow]/D"); 
+            tree->Branch("pflow_vz", pflow_vz, "pflow_vz[npflow]/D"); 
+            tree->Branch("pflow_class", pflow_class, "pflow_class[npflow]/I");
+            tree->Branch("pflow_pdgId", pflow_pdgId, "pflow_pdgId[npflow]/I");
 
             tree->Branch("truth_pt", truth_pt, "truth_pt[ntruth]/D");
             tree->Branch("truth_phi", truth_phi, "truth_phi[ntruth]/D");
@@ -561,25 +561,25 @@ class ParnassusTree : public BaseTree {
             tree->Branch("truth_vy", truth_vy, "truth_vy[ntruth]/D"); 
             tree->Branch("truth_vz", truth_vz, "truth_vz[ntruth]/D"); 
             tree->Branch("truth_class", truth_class, "truth_class[ntruth]/I");
-            tree->Branch("truth_pid", truth_pid, "truth_pid[ntruth]/I");
+            tree->Branch("truth_pdgId", truth_pdgId, "truth_pdgId[ntruth]/I");
         }
     
         void FillTree(std::vector<part> vec_particles, std::vector<part> vec_mcparticles, 
-            EVENT &reco_event,EVENT &mc_event, EVENT_INFO &event_info){
+            EVENT &pflow_event,EVENT &mc_event, EVENT_INFO &event_info){
             eventNumber = event_info.evnum;
             
-            nreco = vec_particles.size();
-            for( int i = 0 ; i < nreco; i++){
+            npflow = vec_particles.size();
+            for( int i = 0 ; i < npflow; i++){
                 part par = vec_particles[i];
 
-                reco_pt[i] = kin.Pt(par.px, par.py);
-                reco_phi[i] = par.phi;
-                reco_eta[i] = kin.eta(par.theta);
-                reco_vx[i] = par.vx;
-                reco_vy[i] = par.vy;
-                reco_vz[i] = par.vz;
-                reco_pid[i] = par.pid;
-                reco_class[i] = GetClassID(par.pid);
+                pflow_pt[i] = kin.Pt(par.px, par.py);
+                pflow_phi[i] = par.phi;
+                pflow_eta[i] = kin.eta(par.theta);
+                pflow_vx[i] = par.vx;
+                pflow_vy[i] = par.vy;
+                pflow_vz[i] = par.vz;
+                pflow_pdgId[i] = par.pid;
+                pflow_class[i] = GetClassID(par.pid);
             }
 
             ntruth = vec_mcparticles.size();
@@ -592,7 +592,7 @@ class ParnassusTree : public BaseTree {
                 truth_vx[i] = par.truevx;
                 truth_vy[i] = par.truevy;
                 truth_vz[i] = par.truevz;
-                truth_pid[i] = par.truepid;
+                truth_pdgId[i] = par.truepid;
                 truth_class[i] = GetClassID(par.truepid);       
             }
 

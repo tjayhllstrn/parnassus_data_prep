@@ -62,12 +62,25 @@ RUN_PERIOD CutManager::get_run_period(){
 
 // Return a vector of particles that passes the cuts
 std::vector<part> CutManager::filter_particles(std::vector<part> particles){
-    
+  //check if particles has length 0
   std::vector<part> filtered_particles;
-  // Get scattered electron
+
+  if (particles.size() == 0) {
+    // std::cout << "#\e[1;31mWarning: No particles found in event. Returning empty vector.\e[0m#" << std::endl;
+    return filtered_particles;
+  }
+    
+  bool electron_found = true;
   part electron;
-  for (auto particle : particles) {
-    if(particle.is_scattered_electron==1) electron=particle;
+  if (particles[0].is_scattered_electron == -1) {
+    // std::cout << "#\e[1;31mWarning: No scattered electron found in event. No cuts requiring electron are applied to particles.\e[0m#" << std::endl;
+    electron_found = false;
+  }
+  if (electron_found) {
+    // Get scattered electron
+    for (auto particle : particles) {
+      if(particle.is_scattered_electron==1) electron=particle;
+    }
   }
     
   for (auto particle : particles) {
@@ -79,13 +92,16 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
       pass = apply_electron_cuts(particle);
       break;
     case 211:
-      pass = apply_pion_cuts(particle,electron);
+      pass = apply_pion_cuts(particle,electron,electron_found);
       break;
     case -211:
-      pass = apply_pion_cuts(particle,electron);
+      pass = apply_pion_cuts(particle,electron,electron_found);
       break;
     case 22:
-      pass = apply_photon_cuts(particle,electron);
+      pass = apply_photon_cuts(particle,electron,electron_found);
+      break;
+    case 0:
+      pass = false; //unknown particle, don't pass
       break;
     default:
       pass = true;
@@ -97,10 +113,10 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
     //    pass = true;
 
     // Forward Detector Cut
-    if(particle.theta*180/PI<5 || particle.theta*180/PI>35){
-        if(particle.pid==22||particle.pid==11||particle.pid==-211||particle.pid==211)
-            pass = false; // Only apply FD cut on electrons, pions, and gammas
-    }
+    // if(particle.theta*180/PI<5 || particle.theta*180/PI>35){
+    //     if(particle.pid==22||particle.pid==11||particle.pid==-211||particle.pid==211)
+    //         pass = false; // Only apply FD cut on electrons, pions, and gammas
+    // }
 
     
     if (pass==true)
@@ -124,21 +140,25 @@ bool CutManager::apply_electron_cuts(part particle){
 }
 
 // Apply all relevant pion cuts
-bool CutManager::apply_pion_cuts(part particle, part electron){
+bool CutManager::apply_pion_cuts(part particle, part electron, bool electron_found){
   if(DC_fiducial_cut(particle)==false) return false;
   if(chi2pid(particle,2)==false) return false; //set to 2 to only have chi2 3 sigma cut
-  if(vz_e_pi(particle,electron)==false) return false;
+  if (electron_found) {
+    if(vz_e_pi(particle,electron)==false) return false;
+  }
   //if(hadronStatus(particle)==false) return false; DEPRECATED, handled in event loop
   return true;
 }
 
 // Apply all relevant photon cuts
-bool CutManager::apply_photon_cuts(part particle, part electron){
+bool CutManager::apply_photon_cuts(part particle, part electron, bool electron_found){
   if(minEpcal(particle)==false) return false;
   // if(photonMinEtot(particle)==false) return false;
-  if(photonElectronAngle(particle,electron)==false) return false;
   if(photonBetaCut(particle)==false) return false;
   if(caloEdges(particle,0)==false) return false;
+  if (electron_found) {
+    if(photonElectronAngle(particle,electron)==false) return false;
+  }
   return true;
 }
 
