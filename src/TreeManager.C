@@ -203,6 +203,9 @@ class EventTree : public BaseTree {
         for( int i = 0 ; i < Nmax; i++){
             part par = vec_particles[i];
 
+            //convert CLAS specific PIDs to PDG IDs
+            if(par.pid == 45) par.pid = 1000010020; // deuteron
+
             pindex[i] = par.pindex;
             status[i] = par.status;
             px[i] = par.px;
@@ -525,7 +528,7 @@ class ParnassusTree : public BaseTree {
 
         int GetClassID(double pid){
 
-            if (abs(pid) == 211 || abs(pid) == 321 || abs(pid) == 2212) return 0; //charged hadron
+            if (abs(pid) == 211 || abs(pid) == 321 || abs(pid) == 2212 || abs(pid) == 45) return 0; //charged hadron (45 = deuteron, CLAS12 EB code)
             if (abs(pid) == 11) return 1; //electron
             if (abs(pid) == 13) return 2; //muon
             if (abs(pid) == 111 || abs(pid) == 130 || abs(pid) == 2112 ||abs(pid) == 310 || abs(pid) ==311 ||abs(pid) == 3122 ||abs(pid) ==3212 || abs(pid) ==3322) return 3; //neutron hadron

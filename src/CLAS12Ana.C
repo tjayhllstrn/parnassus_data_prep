@@ -172,7 +172,10 @@ std::vector<part> CLAS12Ana::load_mc_particles(const std::unique_ptr<clas12::cla
       if(partstruct.truepid==11 && partstruct.trueparentid==0){ // scattered electro
         partstruct.is_scattered_electron=1;
       }
-      
+
+      //FOR PARNASSUS ONLY - cut out all particles that don't fit into the classID and won't be seen by the detector (-12)
+      if(partstruct.truepid == -12) continue;
+
       // Add particle to list
       vec_mcparticles.push_back(partstruct);
     }
