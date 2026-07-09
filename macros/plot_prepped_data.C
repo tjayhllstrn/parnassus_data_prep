@@ -1,4 +1,4 @@
-
+//root -l -b -q 'macros/plot_prepped_data.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001_small_version.root")'
 #include <algorithm>
 #include <cmath>
 #include <iostream>
