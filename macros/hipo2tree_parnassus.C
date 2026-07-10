@@ -5,16 +5,20 @@
 #include "../src/Constants.h"
 #include "../src/Structs.h"
 #include "../src/Kinematics.C"
+#include <filesystem>
+#include <string>
 
 // root -l -b -q 'macros/hipo2tree_parnassus.C("/cache/clas12/rg-a/production/montecarlo/clasdis_pass2/fa18_inb/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001_small_version.root",-1)'
 
 int hipo2tree_parnassus(const char* hipoFile = "",
-    const char* outputFile = "",
+    const char* outDir = "",
     const int maxEvents = 100){
 
-    
+    std::string out_name = std::filesystem::path(hipoFile).stem().string();
+    std::string outputFile = (std::filesystem::path(outDir) / (out_name + ".root")).string();
+     
     // Create a TFile to save the data
-    TFile* fOut = new TFile(outputFile, "RECREATE");
+      TFile* fOut = new TFile(outputFile.c_str(), "RECREATE");
     // Create a TTree to store the data
     EventTree* treeReco = new EventTree("reco_EventTree");
     EventTree* treeMC = new EventTree("mc_EventTree");
