@@ -100,6 +100,9 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
     case 22:
       pass = apply_photon_cuts(particle,electron,electron_found);
       break;
+    case 2112:
+      pass = apply_neutron_cuts(particle);
+      break;
     case 0:
       pass = false; //unknown particle, don't pass
       break;
@@ -135,7 +138,13 @@ bool CutManager::apply_electron_cuts(part particle){
   if(EleSampFrac_pass2(particle)==false) return false;
   if(minEpcal(particle)==false) return false;
   if(caloEdges(particle,0)==false) return false;
-  if(minEleMomentum(particle)==false) return false;
+  // if(minEleMomentum(particle)==false) return false;
+  return true;
+}
+
+bool CutManager::apply_neutron_cuts(part particle){
+  if(particle.E < 1) return false;
+  if(caloEdges(particle,0)==false) return false;
   return true;
 }
 
