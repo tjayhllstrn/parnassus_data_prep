@@ -535,8 +535,8 @@ class ParnassusTree : public BaseTree {
             return -1; //unknown particle
         }
         int GetCharge(double pid){
-            if (pid == 211 || pid == 321 || pid == 2212 || pid == 11 || pid==13 || pid == 45 || pid == 1000010020) return 1; //positive charge
-            if (pid == -211 || pid == -321 || pid == -2212 || pid == -11 || pid==-13) return -1; //negative charge
+            if (pid == 211 || pid == 321 || pid == 2212 || pid == -11 || pid==-13 || pid == 45 || pid == 1000010020) return 1; //positive charge
+            if (pid == -211 || pid == -321 || pid == -2212 || pid == 11 || pid==13) return -1; //negative charge
             return 0; //neutral particle
         }
         
