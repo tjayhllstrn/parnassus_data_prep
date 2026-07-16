@@ -221,6 +221,7 @@ struct part{
   double truep=-999;
   double truept=-999;
   double trueE=-999;
+  double truebeta=-999;
   double truem=-999;
   double truetheta=-999;
   double trueeta=-999;

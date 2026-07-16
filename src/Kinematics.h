@@ -15,6 +15,7 @@ class Kinematics {
   static double Pt(TLorentzVector, TLorentzVector, TLorentzVector);
   static double P(double Px, double Py, double Pz);
   static double E(double M, double P);
+  static double beta(double P, double E);
   static double cth(double Px, double Py, double Pz);
   static double y(double E1, double E2);
   static double nu(double E1, double E2);

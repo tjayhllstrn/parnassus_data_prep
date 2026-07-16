@@ -33,7 +33,7 @@ class EventTree : public BaseTree {
         int pindex[kNmax], status[kNmax], pid[kNmax], truepid[kNmax], trueparentid[kNmax], trueparentpid[kNmax], trueparentparentid[kNmax], trueparentparentpid[kNmax];
         double px[kNmax], py[kNmax], pz[kNmax], p[kNmax], E[kNmax],m[kNmax];
         double vx[kNmax], vy[kNmax], vz[kNmax], chi2[kNmax], beta[kNmax];
-        double truepx[kNmax], truepy[kNmax], truepz[kNmax], truep[kNmax], trueE[kNmax];
+        double truepx[kNmax], truepy[kNmax], truepz[kNmax], truep[kNmax], trueE[kNmax], truebeta[kNmax];
         int is_CFR[kNmax];
         double theta[kNmax], eta[kNmax], phi[kNmax], truept[kNmax], truem[kNmax], truetheta[kNmax], trueeta[kNmax], truephi[kNmax], truevx[kNmax], truevy[kNmax], truevz[kNmax];
         int pcal_sector[kNmax], ecin_sector[kNmax], ecout_sector[kNmax];
@@ -115,6 +115,7 @@ class EventTree : public BaseTree {
             tree->Branch("truevy", truevy, "truevy[Nmax]/D");
             tree->Branch("truevz", truevz, "truevz[Nmax]/D");
             tree->Branch("trueE", trueE, "trueE[Nmax]/D");
+            tree->Branch("truebeta", truebeta, "truebeta[Nmax]/D");
             tree->Branch("is_CFR", is_CFR, "is_CFR[Nmax]/I");
             tree->Branch("truepid", truepid, "truepid[Nmax]/I");
             tree->Branch("trueparentid", trueparentid, "trueparentid[Nmax]/I");
@@ -227,6 +228,7 @@ class EventTree : public BaseTree {
             truept[i] = par.truept;
             trueE[i] = par.trueE;
             truem[i] = par.truem;
+            truebeta[i] = par.truebeta;
             truetheta[i] = par.truetheta;
             trueeta[i] = par.trueeta;
             truephi[i] = par.truephi;
@@ -516,10 +518,10 @@ class ParnassusTree : public BaseTree {
         const static int kNmax = 100;
         int ntruth, npflow, eventNumber;
 
-        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax];
-        int pflow_class[kNmax], pflow_pdgId[kNmax];
-        double truth_pt[kNmax], truth_eta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax];
-        int truth_class[kNmax], truth_pdgId[kNmax];
+        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax],pflow_beta[kNmax];
+        int pflow_class[kNmax], pflow_pdgId[kNmax], pflow_charge[kNmax];
+        double truth_pt[kNmax], truth_eta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax],truth_beta[kNmax];
+        int truth_class[kNmax], truth_pdgId[kNmax], truth_charge[kNmax];
 
         Kinematics kin;
 
@@ -531,6 +533,11 @@ class ParnassusTree : public BaseTree {
             if (abs(pid) == 111 || abs(pid) == 130 || abs(pid) == 2112 ||abs(pid) == 310 || abs(pid) ==311 ||abs(pid) == 3122 ||abs(pid) ==3212 || abs(pid) ==3322) return 3; //neutron hadron
             if (abs(pid) == 22) return 4; //photon
             return -1; //unknown particle
+        }
+        int GetCharge(double pid){
+            if (pid == 211 || pid == 321 || pid == 2212 || pid == 11 || pid==13 || pid == 45 || pid == 1000010020) return 1; //positive charge
+            if (pid == -211 || pid == -321 || pid == -2212 || pid == -11 || pid==-13) return -1; //negative charge
+            return 0; //neutral particle
         }
         
     public:
@@ -553,6 +560,8 @@ class ParnassusTree : public BaseTree {
             tree->Branch("pflow_vz", pflow_vz, "pflow_vz[npflow]/D"); 
             tree->Branch("pflow_class", pflow_class, "pflow_class[npflow]/I");
             tree->Branch("pflow_pdgId", pflow_pdgId, "pflow_pdgId[npflow]/I");
+            tree->Branch("pflow_beta", pflow_beta, "pflow_beta[npflow]/D");
+            tree->Branch("pflow_charge", pflow_charge, "pflow_charge[npflow]/I");
 
             tree->Branch("truth_pt", truth_pt, "truth_pt[ntruth]/D");
             tree->Branch("truth_phi", truth_phi, "truth_phi[ntruth]/D");
@@ -562,6 +571,8 @@ class ParnassusTree : public BaseTree {
             tree->Branch("truth_vz", truth_vz, "truth_vz[ntruth]/D"); 
             tree->Branch("truth_class", truth_class, "truth_class[ntruth]/I");
             tree->Branch("truth_pdgId", truth_pdgId, "truth_pdgId[ntruth]/I");
+            tree->Branch("truth_beta", truth_beta, "truth_beta[ntruth]/D");
+            tree->Branch("truth_charge", truth_charge, "truth_charge[ntruth]/I");
         }
     
         void FillTree(std::vector<part> vec_particles, std::vector<part> vec_mcparticles, 
@@ -583,6 +594,8 @@ class ParnassusTree : public BaseTree {
                 pflow_vz[i] = par.vz;
                 pflow_pdgId[i] = par.pid;
                 pflow_class[i] = GetClassID(par.pid);
+                pflow_beta[i] = par.beta;
+                pflow_charge[i] = GetCharge(par.pid);
             }
 
             ntruth = vec_mcparticles.size();
@@ -600,6 +613,8 @@ class ParnassusTree : public BaseTree {
                 truth_vz[i] = par.truevz;
                 truth_pdgId[i] = par.truepid;
                 truth_class[i] = GetClassID(par.truepid);       
+                truth_beta[i] = par.truebeta;
+                truth_charge[i] = GetCharge(par.truepid);
             }
 
             tree->Fill();

@@ -1,4 +1,4 @@
-//root -l -b -q 'macros/plot_prepped_data.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001_small_version.root")'
+//root -l -b -q 'macros/plot_prepped_data.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001.root")'
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -165,7 +165,11 @@ void draw_comparison_plot(TTree* tree,
         const double xmin = std::min(reco_range.first, truth_range.first);
         const double xmax = std::max(reco_range.second, truth_range.second);
     }
-
+    if (truth_branch=="truth_charge" || reco_branch=="pflow_charge"){
+        xmin=-1;
+        xmax=2;
+        nbins=3;
+    }
 
     auto reco_hist = make_histogram(tree, reco_branch, "hreco_" + reco_branch, nbins, xmin, xmax);
     auto truth_hist = make_histogram(tree, truth_branch, "htruth_" + truth_branch, nbins, xmin, xmax);
@@ -297,10 +301,9 @@ void plot_prepped_data(const char* filename){
     SetReleaseNoteStyle();
     DefineColors();
 
-    std::vector<std::string> vars_to_plot = {"pt", "phi", "eta", "vx", "vy", "vz"};
-    std::vector<std::string> x_labels = {"p_{T} [GeV/c]", "#phi [rad]", "#eta", "v_{x} [cm]", "v_{y} [cm]", "v_{z} [cm]"};
-    std::vector<std::pair<double, double>> val_ranges {{-0.1,2}, {-3.14159, 3.14159}, {-1, 5}, {-4, 4}, {-4, 4}, {-10, 10}};
-    
+    std::vector<std::string> vars_to_plot = {"pt", "phi", "eta", "vx", "vy", "vz","beta","charge"};
+    std::vector<std::string> x_labels = {"p_{T} [GeV/c]", "#phi [rad]", "#eta", "v_{x} [cm]", "v_{y} [cm]", "v_{z} [cm]", "#beta", "charge"};
+    std::vector<std::pair<double, double>> val_ranges {{-0.1,2}, {-3.14159, 3.14159}, {-1, 5}, {-4, 4}, {-4, 4}, {-10, 10}, {0, 1.1}, {-1, 2}};
 
     std::unique_ptr<TFile> input_file(TFile::Open(filename, "READ"));
     if (!input_file || input_file->IsZombie()) {
@@ -315,7 +318,19 @@ void plot_prepped_data(const char* filename){
         return;
     }
 
-    std::string outdir = "plots/" + std::string(filename);
+
+    //get base name of file without extension
+    std::string base_filename = filename;
+    size_t last_slash = base_filename.find_last_of("/\\");
+    if (last_slash != std::string::npos) {
+        base_filename = base_filename.substr(last_slash + 1);
+    }
+    size_t last_dot = base_filename.find_last_of(".");
+    if (last_dot != std::string::npos) {
+        base_filename = base_filename.substr(0, last_dot);
+    }
+    
+    std::string outdir = "plots/" + base_filename;
     gSystem->mkdir(outdir.c_str(), true);
 
     for (size_t i = 0; i < vars_to_plot.size(); ++i) {    

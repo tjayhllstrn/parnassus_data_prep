@@ -56,6 +56,10 @@ double Kinematics::E(double M, double P){
   return pow(M*M+P*P,0.5);
 }
 
+double Kinematics::beta(double P, double E){
+  return P/E;
+}
+
 double Kinematics::cth(double Px, double Py, double Pz){//calculates cos(theta)=pz/ptotal
   double Pt = Kinematics::Pt(Px,Py);
   return Pz / (pow(Pz*Pz+Pt*Pt,0.5));

@@ -138,6 +138,7 @@ std::vector<part> CLAS12Ana::load_mc_particles(const std::unique_ptr<clas12::cla
       partstruct.truept = _kin.Pt(partstruct.truepx,partstruct.truepy);
       partstruct.truep  = _kin.P(partstruct.truepx,partstruct.truepy,partstruct.truepz);
       partstruct.trueE  = _kin.E(partstruct.truem,partstruct.truep);
+      partstruct.truebeta = _kin.beta(partstruct.truep,partstruct.trueE);
 
       partstruct.truetheta = _kin.th(partstruct.truept,partstruct.truepz);
       partstruct.trueeta = _kin.eta(partstruct.truetheta);
