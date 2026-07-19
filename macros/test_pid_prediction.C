@@ -1,10 +1,12 @@
 double PION_MASS = 0.13957000;
 double KAON_MASS = 0.49367700;
 double PROTON_MASS = 0.93827200;
+double DEUTERON_MASS = 1.875612;
 double ELECTRON_MASS = 0.00051099891;
 
 double Pi_k_border = PION_MASS + (KAON_MASS - PION_MASS) / 2;
 double k_p_border = KAON_MASS + (PROTON_MASS - KAON_MASS) / 2;
+double p_d_border = PROTON_MASS + (DEUTERON_MASS - PROTON_MASS) / 2;
 
 
 double calc_rest_mass(double beta, double p){
@@ -27,7 +29,8 @@ int predict_pid(double rest_mass, int charge, int classID){
         if(charge == 1){
             if(rest_mass < Pi_k_border) return 211; //pi+
             else if(rest_mass < k_p_border) return 321; //K+
-            else return 2212; //p
+            else if (rest_mass < p_d_border) return 2212; //p
+            else return 45; //deuteron
         } else if(charge == -1){
             if(rest_mass < Pi_k_border) return -211; //pi-
             else if(rest_mass < k_p_border) return -321; //K-

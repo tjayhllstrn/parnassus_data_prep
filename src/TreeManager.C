@@ -583,9 +583,6 @@ class ParnassusTree : public BaseTree {
             for( int i = 0 ; i < npflow; i++){
                 part par = vec_particles[i];
 
-                //convert CLAS specific PIDs to PDG IDs
-                if(par.pid == 45) par.pid = 1000010020; // deuteron
-
                 pflow_pt[i] = kin.Pt(par.px, par.py);
                 pflow_phi[i] = par.phi;
                 pflow_eta[i] = kin.eta(par.theta);
@@ -601,9 +598,6 @@ class ParnassusTree : public BaseTree {
             ntruth = vec_mcparticles.size();
             for( int i = 0 ; i < ntruth; i++){
                 part par = vec_mcparticles[i];
-
-                //convert CLAS specific PIDs to PDG IDs
-                if(par.truepid == 45) par.truepid = 1000010020; // deuteron
 
                 truth_pt[i] = kin.Pt(par.truepx, par.truepy);
                 truth_phi[i] = par.truephi;
