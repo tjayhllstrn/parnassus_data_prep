@@ -120,6 +120,11 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
             pass = false; 
     }
 
+    //only allow photons and electrons in FT:
+    if(particle.theta*180/PI<5 && particle.pid!=11 && particle.pid!=22){
+            pass = false; 
+    }
+
     
     if (pass==true)
       filtered_particles.push_back(particle);
