@@ -23,6 +23,7 @@ class CutManager{
     
  protected:
   // Protected member functions
+  bool is_in_FD(part);
   bool apply_electron_cuts(part);
   bool apply_pion_cuts(part,part,bool);
   bool apply_photon_cuts(part,part,bool);

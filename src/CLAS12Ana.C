@@ -97,14 +97,14 @@ std::vector<part> CLAS12Ana::load_reco_particles(const std::unique_ptr<clas12::c
       partstruct.status = particle->getStatus();
       partstruct.E = _kin.E(partstruct.m,partstruct.p);
     
-      // Ensure hadrons are not in CD - a hadron in the CD would be a error or a recoil hadron...not what we are looking for?
-      if (partstruct.pid == 2212 || partstruct.pid == -2212 ||
-        partstruct.pid == 2112 ||
-        partstruct.pid == -321 || partstruct.pid == -211 ||
-        partstruct.pid == 211 || partstruct.pid == 321) {
-          if(partstruct.status>=4000 && partstruct.status<5000)
-              continue;
-      }
+      // Ensure hadrons are not in CD - REMOVE FOR PARNASSUS
+    //   if (partstruct.pid == 2212 || partstruct.pid == -2212 ||
+    //     partstruct.pid == 2112 ||
+    //     partstruct.pid == -321 || partstruct.pid == -211 ||
+    //     partstruct.pid == 211 || partstruct.pid == 321) {
+    //       if(partstruct.status>=4000 && partstruct.status<5000)
+    //           continue;
+    //   }
     
       hipoBankInterface.loadBankData(_c12,partstruct);  
       vec_particles.push_back(partstruct);

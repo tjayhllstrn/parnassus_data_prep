@@ -115,11 +115,10 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
     // Added on June 28th 2023
     //    pass = true;
 
-    // Forward Detector Cut
-    // if(particle.theta*180/PI<5 || particle.theta*180/PI>35){
-    //     if(particle.pid==22||particle.pid==11||particle.pid==-211||particle.pid==211)
-    //         pass = false; // Only apply FD cut on electrons, pions, and gammas
-    // }
+    // Detector theta Cut
+    if(particle.theta*180/PI<2 || particle.theta*180/PI>125){
+            pass = false; 
+    }
 
     
     if (pass==true)
@@ -132,25 +131,37 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
 
 // Protected member functions
 // Apply all relevant electron cuts
+bool CutManager::is_in_FD(part particle){
+  double theta = particle.theta*180/PI;
+  if(theta<5 || theta>35) return false;
+  return true;
+}
+
 bool CutManager::apply_electron_cuts(part particle){
-  if(DC_fiducial_cut(particle)==false) return false;
+  if (is_in_FD(particle)) { //only apply Fiducial cut to particles that are in the forward detector
+    if(DC_fiducial_cut(particle)==false) return false;
+    if(EleSampFrac_pass2(particle)==false) return false;
+    if(minEpcal(particle)==false) return false;
+    if(caloEdges(particle,0)==false) return false;
+  }
   if(VzCut(particle)==false) return false;
-  if(EleSampFrac_pass2(particle)==false) return false;
-  if(minEpcal(particle)==false) return false;
-  if(caloEdges(particle,0)==false) return false;
   // if(minEleMomentum(particle)==false) return false;
   return true;
 }
 
 bool CutManager::apply_neutron_cuts(part particle){
   if(particle.E < 1) return false;
-  if(caloEdges(particle,0)==false) return false;
+  if (is_in_FD(particle)) {
+    if(caloEdges(particle,0)==false) return false;
+  }
   return true;
 }
 
 // Apply all relevant pion cuts
 bool CutManager::apply_pion_cuts(part particle, part electron, bool electron_found){
-  if(DC_fiducial_cut(particle)==false) return false;
+  if (is_in_FD(particle)) { //only apply Fiducial cut to particles that are in the forward detector
+    if(DC_fiducial_cut(particle)==false) return false;
+  }
   if(chi2pid(particle,2)==false) return false; //set to 2 to only have chi2 3 sigma cut
   if (electron_found) {
     if(vz_e_pi(particle,electron)==false) return false;
@@ -161,10 +172,11 @@ bool CutManager::apply_pion_cuts(part particle, part electron, bool electron_fou
 
 // Apply all relevant photon cuts
 bool CutManager::apply_photon_cuts(part particle, part electron, bool electron_found){
-  if(minEpcal(particle)==false) return false;
-  // if(photonMinEtot(particle)==false) return false;
   if(photonBetaCut(particle)==false) return false;
-  if(caloEdges(particle,0)==false) return false;
+  if (is_in_FD(particle)) { //only apply Fiducial cut to particles that are in the forward detector
+    if(caloEdges(particle,0)==false) return false;
+    if(minEpcal(particle)==false) return false;
+  }
   if (electron_found) {
     if(photonElectronAngle(particle,electron)==false) return false;
   }
