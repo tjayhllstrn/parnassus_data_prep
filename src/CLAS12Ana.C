@@ -177,6 +177,9 @@ std::vector<part> CLAS12Ana::load_mc_particles(const std::unique_ptr<clas12::cla
       //FOR PARNASSUS ONLY - cut out all particles that don't fit into the classID and won't be seen by the detector (-12)
       if(abs(partstruct.truepid) == 12) continue;
 
+      //FOR PARNASSUS ONLY - cut out all particles that have a small true theta so they don't cause an infinit value in eta
+      if(partstruct.truetheta*180/PI<1) continue;
+
       // Add particle to list
       vec_mcparticles.push_back(partstruct);
     }
