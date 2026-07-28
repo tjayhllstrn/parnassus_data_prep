@@ -105,3 +105,11 @@ for input_file in "${INPUT_FILES[@]}"; do
 done
 
 root -l -b -q "macros/merge_evt_tree.C(\"${MANIFEST_FILE}\",\"${OUTPUT_FILE}\",false,${ROOT_FORCE})"
+
+# The raw eventNumber copied from each input file is only unique within that
+# file, so the merged evt_tree contains duplicate event numbers. Reassign it
+# sequentially (writing to a temp file, then moving it over the merged output).
+REINDEX_FILE="${OUTPUT_FILE}.reindex.tmp"
+rm -f "$REINDEX_FILE"
+root -l -b -q "macros/reassign_event_number.C(\"${OUTPUT_FILE}\",\"${REINDEX_FILE}\")"
+mv -f "$REINDEX_FILE" "$OUTPUT_FILE"
