@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -107,15 +108,58 @@ class CutStudy {
     _stats.resize(_probes.size());
   }
 
+  // Choose the combination of cuts whose emptied events process_event() should
+  // flag, so the caller can save them. `spec` is a comma-separated list of
+  // selectors, each matching either a whole group or one cut as "group/name":
+  //   "ALL"                  -> the full production stack (filter_particles)
+  //   "global,composite"     -> every probe in those two groups, ANDed together
+  //   "photon/photonBetaCut" -> that one cut on its own
+  //   ""                     -> capture disabled
+  // Returns false if a selector matched no probe (nothing is captured then).
+  bool set_capture_cuts(const std::string& spec) {
+    _capture_full_stack = false;
+    _capture_probes.clear();
+    bool ok = true;
+    std::stringstream ss(spec);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+      // trim surrounding whitespace
+      const size_t b = token.find_first_not_of(" \t");
+      if (b == std::string::npos) continue;
+      token = token.substr(b, token.find_last_not_of(" \t") - b + 1);
+
+      if (token == "ALL") { _capture_full_stack = true; continue; }
+      size_t n_matched = 0;
+      for (size_t ic = 0; ic < _probes.size(); ic++) {
+        if (_probes[ic].group == token ||
+            _probes[ic].group + "/" + _probes[ic].name == token) {
+          _capture_probes.push_back(ic);
+          n_matched++;
+        }
+      }
+      if (n_matched == 0) {
+        std::cerr << "  [CutStudy] capture selector '" << token
+                  << "' matched no cut in the registry" << std::endl;
+        ok = false;
+      }
+    }
+    return ok;
+  }
+
+  bool capture_enabled() const { return _capture_full_stack || !_capture_probes.empty(); }
+
   // Feed one event's *unfiltered* reco particles, with is_scattered_electron
   // already tagged the same way macros/hipo2tree_parnassus.C tags it.
-  void process_event(ProbeableCutManager& cm, const std::vector<part>& particles) {
+  // Returns true when the capture combination (set_capture_cuts) leaves this
+  // event with no surviving particle -- i.e. the event is one to save.
+  bool process_event(ProbeableCutManager& cm, const std::vector<part>& particles) {
     _n_events++;
     _n_particles += (long)particles.size();
     if (particles.empty()) _n_events_empty_nocuts++;
 
     // Reference point: the real production cut stack, unmodified.
-    if (cm.filter_particles(particles).empty()) _n_events_empty_baseline++;
+    const bool empty_baseline = cm.filter_particles(particles).empty();
+    if (empty_baseline) _n_events_empty_baseline++;
 
     // Reproduce how filter_particles decides whether the electron-dependent
     // cuts can be applied at all (CutManager.C, top of filter_particles).
@@ -144,6 +188,26 @@ class CutStudy {
       }
       if (n_survivors == 0) st.n_events_empty++;
     }
+
+    // Does the chosen capture combination empty this event? For "ALL" the
+    // answer is the baseline we already computed, so it costs nothing.
+    bool capture = false;
+    if (_capture_full_stack) {
+      capture = empty_baseline;
+    } else if (!_capture_probes.empty()) {
+      capture = true;
+      for (const auto& particle : particles) {
+        bool keep = true;
+        for (size_t ic : _capture_probes) {
+          const CutProbe& probe = _probes[ic];
+          if (!probe.applies(cm, particle)) continue;   // not judged -> kept
+          if (!probe.pass(cm, particle, electron, electron_found)) { keep = false; break; }
+        }
+        if (keep) { capture = false; break; }  // one survivor is enough, stop early
+      }
+    }
+    if (capture) _n_events_captured++;
+    return capture;
   }
 
   void report(std::ostream& os) const {
@@ -159,6 +223,10 @@ class CutStudy {
        << pct(_n_events_empty_nocuts, _n_events) << "%)\n";
     os << "  events with npflow==0, ALL cuts   : " << _n_events_empty_baseline
        << "  (" << pct(_n_events_empty_baseline, _n_events) << "%)   <- production baseline\n";
+    if (capture_enabled()) {
+      os << "  events captured to the ROOT file  : " << _n_events_captured
+         << "  (" << pct(_n_events_captured, _n_events) << "%)\n";
+    }
     os << std::string(94, '-') << "\n";
     os << "  Per-cut, applied alone. 'npflow==0' counts events left with no surviving particle;\n";
     os << "  it can never be below the NO-cuts number or above the ALL-cuts baseline.\n";
@@ -255,6 +323,7 @@ class CutStudy {
 
   long n_events()                const { return _n_events; }
   long n_events_empty_baseline() const { return _n_events_empty_baseline; }
+  long n_events_captured()       const { return _n_events_captured; }
 
  private:
   struct ProbeStats {
@@ -273,6 +342,11 @@ class CutStudy {
   long _n_particles             = 0;
   long _n_events_empty_nocuts   = 0;
   long _n_events_empty_baseline = 0;
+
+  // capture selection (see set_capture_cuts)
+  bool                _capture_full_stack = false;
+  std::vector<size_t> _capture_probes;
+  long                _n_events_captured  = 0;
 };
 
 #endif

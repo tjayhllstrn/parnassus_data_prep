@@ -1,5 +1,6 @@
 #include "../src/CutManager.C"
 #include "../src/CLAS12Ana.C"
+#include "../src/TreeManager.C"
 #include "../src/HipoBankInterface.C"
 #include "../src/Constants.h"
 #include "../src/Structs.h"
@@ -17,6 +18,10 @@
 // particles only exist in the hipo.
 //
 // root -l -b -q 'macros/cut_study.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","plots/cut_study",20000)'
+//
+// Add a 4th argument to also save the MC truth particles of the emptied events
+// (see captureCuts below):
+// root -l -b -q 'macros/cut_study.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","plots/cut_study",20000,"ALL")'
 
 // ===========================================================================
 //  CUT REGISTRY -- THIS IS THE PLACE TO EDIT
@@ -157,9 +162,18 @@ std::vector<CutProbe> build_cut_registry() {
 //  Event loop -- mirrors macros/hipo2tree_parnassus.C with the tree writing
 //  stripped out. Only reco particles matter here.
 // ===========================================================================
+//  captureCuts: leave empty to only print the table. Otherwise it selects the
+//  combination of cuts whose emptied events get written, as MC truth particles
+//  in EventTree format, to <outDir>/<stem>/empty_events.root. Selectors are
+//  comma-separated group or "group/name" entries from the registry above, or
+//  "ALL" for the full production stack. Examples:
+//      "ALL"                    every event production would write as npflow==0
+//      "global,composite"       the registry's equivalent of the full stack
+//      "photon/photonBetaCut"   events emptied by that one cut alone
 int cut_study(const char* hipoFile = "",
               const char* outDir   = "plots/cut_study",
-              const int   maxEvents = 100000){
+              const int   maxEvents = 100000,
+              const char* captureCuts = ""){
 
     std::string stem   = std::filesystem::path(hipoFile).stem().string();
     std::string csvDir = (std::filesystem::path(outDir) / stem).string();
@@ -178,12 +192,38 @@ int cut_study(const char* hipoFile = "",
     clas12ana.set_run_config(_c12); // must precede get_event_info
 
     CutStudy study(build_cut_registry());
+    study.set_capture_cuts(captureCuts);
+
+    // Only opened when capture is requested, so the default run writes no ROOT
+    // file. The TFile must exist before the EventTree, which attaches its TTree
+    // to the current directory.
+    TFile*     fEmpty     = nullptr;
+    EventTree* treeTruth  = nullptr;   // MC truth particles
+    EventTree* treeReco    = nullptr;  // reco particles, BEFORE the cuts
+    if (study.capture_enabled()) {
+        gSystem->mkdir(csvDir.c_str(), true);
+        std::string emptyFile = csvDir + "/empty_events.root";
+        fEmpty    = new TFile(emptyFile.c_str(), "RECREATE");
+        treeTruth = new EventTree("truth_EventTree");
+        treeReco  = new EventTree("reco_EventTree");
+        std::cout << "  capturing events emptied by '" << captureCuts
+                  << "' to " << emptyFile << std::endl;
+    }
 
     std::vector<part> vec_particles;
+    std::vector<part> vec_mcparticles;
     EVENT_INFO event_info;
     EVENT reco_event;
+    EVENT mc_event;
 
-    int whileidx = 0;
+    int  whileidx = 0;
+    long ntrunc   = 0;   // captured events whose particle list overran EventTree
+
+    // EventTree's fixed arrays hold kNmax=100 particles and FillTree does not
+    // clamp, so truncate here rather than overrun them.
+    auto clamp_to_tree = [&ntrunc](std::vector<part>& v) {
+        if (v.size() > 100) { v.resize(100); ntrunc++; }
+    };
 
     while (_chain.Next() == true && (whileidx < maxEvents || maxEvents < 0)) {
         if (whileidx % 10000 == 0 && whileidx != 0) {
@@ -197,6 +237,12 @@ int cut_study(const char* hipoFile = "",
 
         vec_particles = clas12ana.load_reco_particles(_c12);
 
+        // Clear the kinematics each event: they are only filled when a
+        // scattered electron is found, and the captured events frequently have
+        // none -- without this they would inherit the previous event's values.
+        reco_event = EVENT();
+        mc_event   = EVENT();
+
         // Tag the scattered electron exactly as the production macro does --
         // the is_scattered_electron==-1 marker on particle 0 is the signal
         // filter_particles reads to skip the electron-dependent cuts.
@@ -209,11 +255,41 @@ int cut_study(const char* hipoFile = "",
             vec_particles[0].is_scattered_electron = -1;
         }
 
-        study.process_event(_cm, vec_particles);
+        // Save the emptied events. Both trees get one entry per captured event,
+        // so they stay row-aligned: entry i of reco_EventTree is the pre-cut
+        // reco content of the same event as entry i of truth_EventTree.
+        // MC truth is only loaded for the events we actually save, so the
+        // default (no capture) run never pays for it.
+        if (study.process_event(_cm, vec_particles) && treeTruth) {
+            vec_mcparticles = clas12ana.load_mc_particles(_c12);
+            clas12ana.fill_mc_event_variables(mc_event, vec_mcparticles);
+            clamp_to_tree(vec_mcparticles);
+            treeTruth->FillTree(vec_mcparticles, mc_event, event_info);
+
+            // vec_particles is still the unfiltered list -- process_event takes
+            // it by const reference and filter_particles by value.
+            clamp_to_tree(vec_particles);
+            treeReco->FillTree(vec_particles, reco_event, event_info);
+        }
     }
 
     study.report(std::cout);
     study.write_csv(csvDir);
+
+    if (treeTruth) {
+        fEmpty->cd();
+        treeTruth->Write();
+        treeReco->Write();
+        fEmpty->Close();
+        std::cout << "  wrote " << csvDir << "/empty_events.root  ("
+                  << study.n_events_captured()
+                  << " events; truth_EventTree + reco_EventTree)" << std::endl;
+        if (ntrunc > 0) {
+            std::cout << "  WARNING: " << ntrunc
+                      << " particle lists had >100 particles and were truncated to 100"
+                      << std::endl;
+        }
+    }
 
     return 0;
 }
