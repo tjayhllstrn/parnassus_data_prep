@@ -43,6 +43,16 @@ Sanity-check the particle-class assignment (`pflow_class`/`truth_class`) in a pr
 root -l -b -q 'macros/check_classID.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001_small_version.root")'
 ```
 
+Measure what each particle-level cut does on its own — for every cut in the registry, apply only that cut
+and count how many events end up with no surviving particles (`npflow==0`):
+```
+root -l -b -q 'macros/cut_study.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","plots/cut_study",20000)'
+```
+This one must read a raw `.hipo`, not a prepped `.root` — the prepped trees are filled *after*
+`filter_particles`, so the pre-cut particles only exist in the hipo. The set of cuts studied is a single
+registry block at the top of `macros/cut_study.C` (one line per cut); the counting machinery lives in
+`src/CutStudy.h`. Results go to stdout plus `<outDir>/<hipo stem>/summary.csv` and `removed_by_pid.csv`.
+
 These all require running inside the apptainer container described above.
 
 ACLiC compilation artifacts (`macros/*.d`, `macros/*.pcm`, `macros/*.so`) are build byproducts of running a
@@ -101,5 +111,9 @@ macro once (e.g. `plot_prepped_data.C`) — they are gitignored and safe to dele
   and torus-bending-dependent physics constants and cuts — when adding support for a new run period, add
   the run range to `runPeriod`, `runPolarization`, `runBeamEnergy`, `runTorusBending`, and (if fiducial
   cuts differ) the `CutManager` cut logic.
+- Individual cuts in `CutManager` are `protected` on purpose — production code goes through
+  `filter_particles` only. `src/CutStudy.h` defines a `ProbeableCutManager` subclass that re-exposes them
+  for the cut study, so a cut you want to be able to study must be a named method (not an inline condition
+  inside `filter_particles`) and needs a `using` line in that subclass.
 - `prepped_data/` and `plots/` hold generated `.hipo`/`.root`/`.png` outputs and are gitignored — treat
   files there as regenerable artifacts, not source.

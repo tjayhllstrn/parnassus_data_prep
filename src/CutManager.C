@@ -116,21 +116,21 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
     //    pass = true;
 
     // Detector theta Cut
-    if(particle.theta*180/PI<2 || particle.theta*180/PI>125){
-            pass = false; 
+    if(thetaRangeCut(particle)==false){
+            pass = false;
     }
 
     //only allow photons and electrons in FT:
-    if(particle.theta*180/PI<5 && particle.pid!=11 && particle.pid!=22){
-            pass = false; 
+    if(FTLeptonPhotonCut(particle)==false){
+            pass = false;
     }
 
     // FOR PARNASSUS: apply pt cut
-    if(particle.pt > 2.5){
-            pass = false; 
+    if(maxPtCut(particle)==false){
+            pass = false;
     }
 
-    
+
     if (pass==true)
       filtered_particles.push_back(particle);
   }
@@ -147,6 +147,24 @@ bool CutManager::is_in_FD(part particle){
   return true;
 }
 
+// Keep only particles inside the detector's polar acceptance
+bool CutManager::thetaRangeCut(part particle){
+  if(particle.theta*180/PI<2 || particle.theta*180/PI>125) return false;
+  return true;
+}
+
+// Only allow photons and electrons in the Forward Tagger
+bool CutManager::FTLeptonPhotonCut(part particle){
+  if(particle.theta*180/PI<5 && particle.pid!=11 && particle.pid!=22) return false;
+  return true;
+}
+
+// FOR PARNASSUS: maximum transverse momentum cut
+bool CutManager::maxPtCut(part particle){
+  if(particle.pt > 2.5) return false;
+  return true;
+}
+
 bool CutManager::apply_electron_cuts(part particle){
   if (is_in_FD(particle)) { //only apply Fiducial cut to particles that are in the forward detector
     if(DC_fiducial_cut(particle)==false) return false;
@@ -160,7 +178,7 @@ bool CutManager::apply_electron_cuts(part particle){
 }
 
 bool CutManager::apply_neutron_cuts(part particle){
-  if(particle.E < 1) return false;
+  if(minNeutronEnergy(particle)==false) return false;
   if (is_in_FD(particle)) {
     if(caloEdges(particle,0)==false) return false;
   }
@@ -628,6 +646,12 @@ bool CutManager::minEleMomentum(part particle){
 // Minimum pion momentum cut
 bool CutManager::minPiMomentum(part particle){
   if(particle.p < 1.25) return false;
+  return true;
+}
+
+// Minimum neutron energy cut
+bool CutManager::minNeutronEnergy(part particle){
+  if(particle.E < 1) return false;
   return true;
 }
 

@@ -24,6 +24,10 @@ class CutManager{
  protected:
   // Protected member functions
   bool is_in_FD(part);
+  // Cuts applied to every particle regardless of PID
+  bool thetaRangeCut(part);
+  bool FTLeptonPhotonCut(part);
+  bool maxPtCut(part);
   bool apply_electron_cuts(part);
   bool apply_pion_cuts(part,part,bool);
   bool apply_photon_cuts(part,part,bool);
@@ -37,6 +41,7 @@ class CutManager{
   bool EleSampFrac_pass2(part);
   bool EleSampFrac_pass2MC(part);
   bool minPiMomentum(part);
+  bool minNeutronEnergy(part);
   bool hadronStatus(part);
   bool VzCut(part);
   bool minEpcal(part);
