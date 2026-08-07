@@ -125,6 +125,11 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
             pass = false; 
     }
 
+    // FOR PARNASSUS: apply pt cut
+    if(particle.pt > 2.5){
+            pass = false; 
+    }
+
     
     if (pass==true)
       filtered_particles.push_back(particle);

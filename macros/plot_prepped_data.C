@@ -197,6 +197,53 @@ void draw_comparison_plot(TTree* tree,
     save_plot_objects(output_base, reco_hist.get(), truth_hist.get(), &legend);
     // canvas.SaveAs((output_base + ".pdf").c_str());
 }
+void draw_comparison_plot(TTree* mc_tree, TTree* reco_tree,
+                          const std::string& reco_branch,
+                          const std::string& truth_branch,
+                          const std::string& title,
+                          const std::string& x_label,
+                          const std::string& output_base,
+                          double xmin = -999,
+                          double xmax = -999,
+                          int nbins = 100) {
+    if (xmin == -999 || xmax == -999) {
+        const auto reco_range = get_branch_range(reco_tree, reco_branch);
+        const auto truth_range = get_branch_range(mc_tree, truth_branch);
+        const double xmin = std::min(reco_range.first, truth_range.first);
+        const double xmax = std::max(reco_range.second, truth_range.second);
+    }
+    if (truth_branch=="truth_charge" || reco_branch=="pflow_charge"){
+        xmin=-1;
+        xmax=2;
+        nbins=3;
+    }
+
+    auto reco_hist = make_histogram(reco_tree, reco_branch, "hreco_" + reco_branch, nbins, xmin, xmax);
+    auto truth_hist = make_histogram(mc_tree, truth_branch, "htruth_" + truth_branch, nbins, xmin, xmax);
+
+    style_overlay_hist(reco_hist.get(), BLUE, 20);
+    style_overlay_hist(truth_hist.get(), MAGENTA, 24);
+    normalize_hist(reco_hist.get());
+    normalize_hist(truth_hist.get());
+
+    TCanvas canvas(("c_" + output_base).c_str(), title.c_str(), 1200, 900);
+    canvas.cd();
+
+    truth_hist->SetTitle(title.c_str());
+    truth_hist->GetXaxis()->SetTitle(x_label.c_str());
+    truth_hist->GetYaxis()->SetTitle("Normalized entries");
+    truth_hist->Draw("hist");
+    reco_hist->Draw("hist same");
+
+    TLegend legend(0.68, 0.78, 0.90, 0.90);
+    legend.AddEntry(reco_hist.get(), (reco_branch).c_str(),"f");
+    legend.AddEntry(truth_hist.get(), (truth_branch).c_str(),"f");
+    legend.Draw();
+
+    canvas.SaveAs((output_base + ".png").c_str());
+    save_plot_objects(output_base, reco_hist.get(), truth_hist.get(), &legend);
+    // canvas.SaveAs((output_base + ".pdf").c_str());
+}
 
 void label_integer_bins(TH1D* hist, const std::map<int, long long>& counts) {
     int bin = 1;
@@ -215,8 +262,8 @@ std::unique_ptr<TH1D> build_category_histogram(TTree* tree,
     TTreeReaderArray<int> values(reader, branch_name.c_str());
 
     while (reader.Next()) {
-        for (const auto value : values) {
-            counts[value]++;
+        for (std::size_t i = 0; i < values.GetSize(); ++i) {
+            counts[values[i]]++;
         }
     }
 
@@ -365,4 +412,35 @@ void plot_prepped_data(const char* filename){
                         truth_pid_hist.get(),
                         "PID",
                         outdir + "/PID_pie_comparison");
+    
+    //also plot DIS variables
+    std::cout << "Plotting DIS variables..." << std::endl;
+    TTree* mc_EventTree = nullptr;
+    TTree* reco_EventTree = nullptr;
+    input_file->GetObject("mc_EventTree", mc_EventTree);
+    if (!mc_EventTree) {
+        Error("plot_prepped_data", "Could not find tree mc_EventTree in file: %s", filename);
+        return;
+    }
+    input_file->GetObject("reco_EventTree", reco_EventTree);
+    if (!reco_EventTree) {
+        Error("plot_prepped_data", "Could not find tree reco_EventTree in file: %s", filename);
+        return;
+    } 
+    std::vector<std::string> dis_vars = {"Q2", "W", "x", "y","nu"};
+    std::vector<std::string> dis_labels = {"Q^{2} [GeV^{2}]", "W [GeV]", "x", "y","#nu [GeV]"};
+    std::vector<std::pair<double, double>> dis_ranges = {{0, 10}, {0, 10}, {0, 1}, {0, 1}, {0, 10}};
+
+    for (size_t i = 0; i < dis_vars.size(); ++i) {    
+        draw_comparison_plot(mc_EventTree, reco_EventTree,
+                            dis_vars[i],
+                            "true" + dis_vars[i],
+                            "pflow vs truth " + dis_vars[i],
+                            dis_labels[i],
+                            outdir + "/compare_" + dis_vars[i],
+                            dis_ranges[i].first,
+                            dis_ranges[i].second);
+    }
+
+
 }
