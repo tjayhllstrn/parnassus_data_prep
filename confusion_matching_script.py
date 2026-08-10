@@ -1,7 +1,7 @@
 import ROOT
 import numpy as np
 
-FILENAME, TREENAME = "/volatile/clas12/users/tjhellst/parnassus_data/v1/clasdis_rga_fa18_inb_45nA_10604MeV-0001.root", "evt_tree"
+FILENAME, TREENAME = "prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0306_GEMC_512_bad_neutral.root", "evt_tree"
 DR_MAX = 0.10                      # max sqrt(dtheta^2 + dphi^2) to call it a match
 
 RECO_PID, RECO_ETA, RECO_PHI = "pflow_pdgId", "pflow_eta", "pflow_phi"
@@ -12,7 +12,7 @@ ROOT.gStyle.SetPaintTextFormat("4.2f")
 ROOT.gStyle.SetPalette(ROOT.kMint)
 ROOT.TColor.InvertPalette()         # light = low, dark = high
 
-codes  = [22, 11, -11, 211, -211, 321, -321, 2212, -2212, 2112, 1000010020]
+codes  = [22, 11, -11, 211, -211, 321, -321, 2212, -2212, 2112, 45]
 labels = ["#gamma", "e^{-}", "e^{+}", "#pi^{+}", "#pi^{-}", "K^{+}", "K^{-}",
           "p", "#bar{p}", "n", "d", "other"]
 n   = len(labels)
@@ -108,4 +108,4 @@ h.GetXaxis().SetLabelSize(0.04)
 h.GetYaxis().SetLabelSize(0.04)
 h.Draw("COL TEXT")
 c.Draw()                             # renders inline in the notebook
-c.SaveAs("confusion_matrix_matched_001.png")
+c.SaveAs("plots/clasdis_rga_fa18_inb_45nA_10604MeV-0306_GEMC_512_bad_neutral/confusion_matrix.png")
