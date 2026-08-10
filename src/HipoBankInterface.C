@@ -270,5 +270,9 @@ void HipoBankInterface::clear(){
     _x_DC[i]=0;
     _y_DC[i]=0;
     _z_DC[i]=0;
+    // Must be cleared like the other DC variables: it is only assigned for
+    // REC::Traj layers 6/18/36, so without this a particle with no drift
+    // chamber trajectory inherits the previous particle's edge values.
+    _edge[i]=0;
   }
 }
