@@ -116,7 +116,7 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
     //    pass = true;
 
     // Detector theta Cut
-    if(thetaRangeCut(particle)==false){
+    if(is_in_FD(particle)==false){
             pass = false;
     }
 
