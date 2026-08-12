@@ -86,6 +86,10 @@ struct EVENT_INFO {
 
 struct EVENT {
     
+    void reset() noexcept {
+        *this = EVENT{};
+    }
+    
     double x=-999;
     double y=-999;
     double Q2=-999;

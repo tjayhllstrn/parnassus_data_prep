@@ -66,6 +66,10 @@ int hipo2tree_parnassus(const char* hipoFile = "",
         whileidx++;
         _cm.set_run(event_info.run); //sets relevant runinfo for the cutmanager class to use 
 
+        //clear reco_event and mc_event structs to prepare for new event
+        reco_event.reset();
+        mc_event.reset();
+
         //colect reconstructed particle info
         vec_particles = clas12ana.load_reco_particles(_c12);
         //determine which particle is the scattered electron

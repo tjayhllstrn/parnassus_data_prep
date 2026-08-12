@@ -516,12 +516,13 @@ class DihadronTree : public BaseTree {
 class ParnassusTree : public BaseTree {
     private:
         const static int kNmax = 100;
-        int ntruth, npflow, eventNumber;
+        int ntruth, npflow, eventNumber,truth_scatE, pflow_scatE;
+        double pflow_Q2, pflow_x, pflow_W, truth_Q2, truth_x, truth_W;
 
-        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax],pflow_beta[kNmax];
-        int pflow_class[kNmax], pflow_pdgId[kNmax], pflow_charge[kNmax];
-        double truth_pt[kNmax], truth_eta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax],truth_beta[kNmax];
-        int truth_class[kNmax], truth_pdgId[kNmax], truth_charge[kNmax];
+        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax];
+        int pflow_class[kNmax], pflow_pdgId[kNmax];
+        double truth_pt[kNmax], truth_eta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax];
+        int truth_class[kNmax], truth_pdgId[kNmax];
 
         Kinematics kin;
 
@@ -539,6 +540,14 @@ class ParnassusTree : public BaseTree {
             if (pid == -211 || pid == -321 || pid == -2212 || pid == 11 || pid==13) return -1; //negative charge
             return 0; //neutral particle
         }
+
+        int HasScatteredElectron(std::vector<part> particles){
+            for (const auto& par : particles){
+                if (par.pid == 11 && par.is_scattered_electron==1) return 1;
+            }
+            return 0;
+        }
+
         
     public:
         ParnassusTree(const char * treename) : BaseTree(treename) {            
@@ -560,8 +569,11 @@ class ParnassusTree : public BaseTree {
             tree->Branch("pflow_vz", pflow_vz, "pflow_vz[npflow]/D"); 
             tree->Branch("pflow_class", pflow_class, "pflow_class[npflow]/I");
             tree->Branch("pflow_pdgId", pflow_pdgId, "pflow_pdgId[npflow]/I");
-            tree->Branch("pflow_beta", pflow_beta, "pflow_beta[npflow]/D");
-            tree->Branch("pflow_charge", pflow_charge, "pflow_charge[npflow]/I");
+
+            tree->Branch("pflow_scatE", &pflow_scatE, "pflow_scatE/I");
+            tree->Branch("pflow_Q2", &pflow_Q2, "pflow_Q2/D");
+            tree->Branch("pflow_x", &pflow_x, "pflow_x/D");
+            tree->Branch("pflow_W", &pflow_W, "pflow_W/D");
 
             tree->Branch("truth_pt", truth_pt, "truth_pt[ntruth]/D");
             tree->Branch("truth_phi", truth_phi, "truth_phi[ntruth]/D");
@@ -571,14 +583,17 @@ class ParnassusTree : public BaseTree {
             tree->Branch("truth_vz", truth_vz, "truth_vz[ntruth]/D"); 
             tree->Branch("truth_class", truth_class, "truth_class[ntruth]/I");
             tree->Branch("truth_pdgId", truth_pdgId, "truth_pdgId[ntruth]/I");
-            tree->Branch("truth_beta", truth_beta, "truth_beta[ntruth]/D");
-            tree->Branch("truth_charge", truth_charge, "truth_charge[ntruth]/I");
+
+            tree->Branch("truth_scatE", &truth_scatE, "truth_scatE/I");
+            tree->Branch("truth_Q2", &truth_Q2, "truth_Q2/D");
+            tree->Branch("truth_x", &truth_x, "truth_x/D");
+            tree->Branch("truth_W", &truth_W, "truth_W/D");
         }
     
         void FillTree(std::vector<part> vec_particles, std::vector<part> vec_mcparticles, 
             EVENT &pflow_event,EVENT &mc_event, EVENT_INFO &event_info){
-            eventNumber = event_info.evnum;
             
+            eventNumber = event_info.evnum;
             npflow = vec_particles.size();
             for( int i = 0 ; i < npflow; i++){
                 part par = vec_particles[i];
@@ -591,9 +606,11 @@ class ParnassusTree : public BaseTree {
                 pflow_vz[i] = par.vz;
                 pflow_pdgId[i] = par.pid;
                 pflow_class[i] = GetClassID(par.pid);
-                pflow_beta[i] = par.beta;
-                pflow_charge[i] = GetCharge(par.pid);
             }
+            pflow_scatE = HasScatteredElectron(vec_particles);
+            pflow_Q2 = pflow_event.Q2;
+            pflow_x = pflow_event.x;
+            pflow_W = pflow_event.W;
 
             ntruth = vec_mcparticles.size();
             for( int i = 0 ; i < ntruth; i++){
@@ -607,9 +624,11 @@ class ParnassusTree : public BaseTree {
                 truth_vz[i] = par.truevz;
                 truth_pdgId[i] = par.truepid;
                 truth_class[i] = GetClassID(par.truepid);       
-                truth_beta[i] = par.truebeta;
-                truth_charge[i] = GetCharge(par.truepid);
             }
+            truth_scatE = HasScatteredElectron(vec_mcparticles);
+            truth_Q2 = mc_event.trueQ2;
+            truth_x = mc_event.truex;
+            truth_W = mc_event.trueW;
 
             tree->Fill();
         }

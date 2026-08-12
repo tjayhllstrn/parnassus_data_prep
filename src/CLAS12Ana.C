@@ -239,8 +239,8 @@ int CLAS12Ana::find_reco_scattered_electron(std::vector<part>& vec_particles){
     
     // Toss events where the REC::Particle scattered electron was not in the FD
     
-    if((vec_particles[idx_e].status <= -3000 || vec_particles[idx_e].status > -2000))
-            return -1;
+    // if((vec_particles[idx_e].status <= -3000 || vec_particles[idx_e].status > -2000))
+    //         return -1;
     
     return idx_e;
 }
