@@ -84,7 +84,18 @@ int hipo2tree_parnassus(const char* hipoFile = "",
         }
         
         vec_particles = _cm.filter_particles(vec_particles);
-        
+
+        //the scattered electron itself may have been removed by the cuts above. If it was, the DIS
+        //variables computed from it no longer describe anything in the output particle list, so put
+        //them back to -999 to stay consistent with the scattered-electron flag written to the trees
+        if (idx_scattered_ele != -1){
+            bool scattered_ele_survived = false;
+            for (const auto& p : vec_particles){
+                if (p.pid == 11 && p.is_scattered_electron == 1) { scattered_ele_survived = true; break; }
+            }
+            if (!scattered_ele_survived) reco_event.reset();
+        }
+
         //collect MC particle information
         vec_mcparticles = clas12ana.load_mc_particles(_c12);
         clas12ana.fill_mc_event_variables(mc_event,vec_mcparticles);
