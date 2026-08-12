@@ -2,13 +2,13 @@
 
 #SBATCH --partition=production
 #SBATCH --account=clas12
-#SBATCH --array=0-6
+#SBATCH --array=0-8
 #SBATCH --mem-per-cpu=5000
 #SBATCH --nodes=2
 #SBATCH --chdir=/scratch/slurm
 #SBATCH --output=/farm_out/%u/%x-%j-%N.out
 #SBATCH --error=/farm_out/%u/%x-%j-%N.err
-#SBATCH --job-name=processing_parnassus_v0
+#SBATCH --job-name=processing_parnassus_v4
 #SBATCH --time=4:00:00
 
 cd /w/hallb-scshelf2102/clas12/users/tjhellst/parnassus_data_prep
@@ -16,7 +16,7 @@ cd /w/hallb-scshelf2102/clas12/users/tjhellst/parnassus_data_prep
 INPUT_DIR=$1
 DATA_VERSION=$2
 OUTPUT_DIR="/volatile/clas12/users/tjhellst/parnassus_data/$2/"
-INPUT_FILE_BASE="*-030*.hipo"
+INPUT_FILE_BASE="*-000*.hipo"
 
 # Enable nullglob to get empty array if no matches (instead of literal pattern)
 shopt -s nullglob

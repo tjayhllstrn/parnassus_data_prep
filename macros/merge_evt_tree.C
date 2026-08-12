@@ -188,7 +188,15 @@ int merge_evt_tree(const char *inputSource,
 
     out.cd();
     std::cout << "Merging " << files.size() << " files into: " << outFile << std::endl;
-    TTree *merged = chain.CloneTree(-1, "fast");
+
+    TTree* merged = nullptr;
+    if(chain.GetBranch("pflow_scatE") != nullptr) {
+        std::cout << "Filtering on pflow_scatE == 1" << std::endl;
+        merged = chain.CopyTree("pflow_scatE == 1");
+    } else {
+        merged = chain.CloneTree(-1, "fast");
+    }
+    
     if (!merged) {
         std::cerr << "ERROR: CloneTree returned null. Merge failed." << std::endl;
         return 1;

@@ -182,11 +182,11 @@ void draw_comparison_plot(TTree* tree,
     TCanvas canvas(("c_" + output_base).c_str(), title.c_str(), 1200, 900);
     canvas.cd();
 
-    reco_hist->SetTitle(title.c_str());
-    reco_hist->GetXaxis()->SetTitle(x_label.c_str());
-    reco_hist->GetYaxis()->SetTitle("Normalized entries");
-    reco_hist->Draw("hist");
-    truth_hist->Draw("hist same");
+    truth_hist->SetTitle(title.c_str());
+    truth_hist->GetXaxis()->SetTitle(x_label.c_str());
+    truth_hist->GetYaxis()->SetTitle("Normalized entries");
+    truth_hist->Draw("hist");
+    reco_hist->Draw("hist same");
 
     TLegend legend(0.68, 0.78, 0.90, 0.90);
     legend.AddEntry(reco_hist.get(), (reco_branch).c_str(),"f");
@@ -437,7 +437,7 @@ void plot_prepped_data(const char* filename){
                             "true" + dis_vars[i],
                             "pflow vs truth " + dis_vars[i],
                             dis_labels[i],
-                            outdir + "/compare_" + dis_vars[i],
+                            outdir + "/EventTree_compare_" + dis_vars[i],
                             dis_ranges[i].first,
                             dis_ranges[i].second);
     }

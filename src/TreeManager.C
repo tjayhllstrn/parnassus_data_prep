@@ -519,9 +519,9 @@ class ParnassusTree : public BaseTree {
         int ntruth, npflow, eventNumber,truth_scatE, pflow_scatE;
         double pflow_Q2, pflow_x, pflow_W, truth_Q2, truth_x, truth_W;
 
-        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax];
+        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_theta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax];
         int pflow_class[kNmax], pflow_pdgId[kNmax];
-        double truth_pt[kNmax], truth_eta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax];
+        double truth_pt[kNmax], truth_eta[kNmax], truth_theta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax];
         int truth_class[kNmax], truth_pdgId[kNmax];
 
         Kinematics kin;
@@ -563,6 +563,7 @@ class ParnassusTree : public BaseTree {
             
             tree->Branch("pflow_pt", pflow_pt, "pflow_pt[npflow]/D");
             tree->Branch("pflow_phi", pflow_phi, "pflow_phi[npflow]/D");
+            tree->Branch("pflow_theta", pflow_theta, "pflow_theta[npflow]/D");
             tree->Branch("pflow_eta", pflow_eta, "pflow_eta[npflow]/D");
             tree->Branch("pflow_vx", pflow_vx, "pflow_vx[npflow]/D");
             tree->Branch("pflow_vy", pflow_vy, "pflow_vy[npflow]/D"); 
@@ -576,8 +577,9 @@ class ParnassusTree : public BaseTree {
             tree->Branch("pflow_W", &pflow_W, "pflow_W/D");
 
             tree->Branch("truth_pt", truth_pt, "truth_pt[ntruth]/D");
-            tree->Branch("truth_phi", truth_phi, "truth_phi[ntruth]/D");
             tree->Branch("truth_eta", truth_eta, "truth_eta[ntruth]/D");
+            tree->Branch("truth_phi", truth_phi, "truth_phi[ntruth]/D");
+            tree->Branch("truth_theta", truth_theta, "truth_theta[ntruth]/D");
             tree->Branch("truth_vx", truth_vx, "truth_vx[ntruth]/D");
             tree->Branch("truth_vy", truth_vy, "truth_vy[ntruth]/D"); 
             tree->Branch("truth_vz", truth_vz, "truth_vz[ntruth]/D"); 
@@ -600,6 +602,7 @@ class ParnassusTree : public BaseTree {
 
                 pflow_pt[i] = kin.Pt(par.px, par.py);
                 pflow_phi[i] = par.phi;
+                pflow_theta[i] = par.theta;
                 pflow_eta[i] = kin.eta(par.theta);
                 pflow_vx[i] = par.vx;
                 pflow_vy[i] = par.vy;
@@ -619,6 +622,7 @@ class ParnassusTree : public BaseTree {
                 truth_pt[i] = kin.Pt(par.truepx, par.truepy);
                 truth_phi[i] = par.truephi;
                 truth_eta[i] = kin.eta(par.truetheta);
+                truth_theta[i] = par.truetheta;
                 truth_vx[i] = par.truevx;
                 truth_vy[i] = par.truevy;
                 truth_vz[i] = par.truevz;

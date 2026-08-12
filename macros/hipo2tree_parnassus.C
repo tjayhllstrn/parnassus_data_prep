@@ -79,6 +79,7 @@ int hipo2tree_parnassus(const char* hipoFile = "",
             vec_particles[idx_scattered_ele].is_scattered_electron = 1;
             clas12ana.fill_reco_event_variables(reco_event, vec_particles);
         }
+        //if the event doesn't contain a scattered electron, then skip the event 
         if (idx_scattered_ele == -1 && vec_particles.size() > 0) {
             vec_particles[0].is_scattered_electron = -1;
         }
