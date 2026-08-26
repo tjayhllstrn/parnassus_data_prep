@@ -16,6 +16,7 @@ int hipo2tree_parnassus(const char* hipoFile = "",
 
     std::string out_name = std::filesystem::path(hipoFile).stem().string();
     std::string outputFile = (std::filesystem::path(outDir) / (out_name + ".root")).string();
+    bool is_real_data = std::string(hipoFile).find("reco") != std::string::npos;
      
     // Create a TFile to save the data
       TFile* fOut = new TFile(outputFile.c_str(), "RECREATE");
@@ -98,8 +99,12 @@ int hipo2tree_parnassus(const char* hipoFile = "",
         }
 
         //collect MC particle information
-        vec_mcparticles = clas12ana.load_mc_particles(_c12);
-        clas12ana.fill_mc_event_variables(mc_event,vec_mcparticles);
+        if (is_real_data) {
+            vec_mcparticles.clear();
+        } else {
+            vec_mcparticles = clas12ana.load_mc_particles(_c12);
+            clas12ana.fill_mc_event_variables(mc_event,vec_mcparticles);
+        }
         
         //then fill the tree with the vector of particles, event, and event_info
         treeReco->FillTree(vec_particles, reco_event, event_info);
