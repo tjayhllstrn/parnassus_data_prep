@@ -113,7 +113,8 @@ bool file_has_evt_tree(const std::string &filePath) {
 int merge_evt_tree(const char *inputSource,
                    const char *outputFile,
                    bool recursive = false,
-                   bool forceOverwrite = false) {
+                   bool forceOverwrite = false,
+		   bool filterScatE = false) {
     if (!inputSource || !outputFile) {
         std::cerr << "ERROR: inputSource and outputFile are required." << std::endl;
         return 1;
@@ -190,7 +191,7 @@ int merge_evt_tree(const char *inputSource,
     std::cout << "Merging " << files.size() << " files into: " << outFile << std::endl;
 
     TTree* merged = nullptr;
-    if(chain.GetBranch("pflow_scatE") != nullptr) {
+    if(chain.GetBranch("pflow_scatE") != nullptr && filterScatE) {
         std::cout << "Filtering on pflow_scatE == 1" << std::endl;
         merged = chain.CopyTree("pflow_scatE == 1");
     } else {

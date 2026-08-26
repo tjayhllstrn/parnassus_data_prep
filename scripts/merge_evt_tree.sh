@@ -4,7 +4,7 @@ set -euo pipefail
 # Merge only evt_tree from an explicit list of ROOT files.
 #
 # Usage:
-#   scripts/merge_evt_tree.sh OUTPUT_FILE [--dry-run] [--max-files N] [--force] FILE1 [FILE2 ...]
+#   scripts/merge_evt_tree.sh OUTPUT_FILE [--dry-run] [--max-files N] [--force] [--filterScatE] FILE1 [FILE2 ...]
 #
 # Example:
 #   scripts/merge_evt_tree.sh prepped_data/merged_evt_tree.root --dry-run --max-files 10 prepped_data/*.root
@@ -21,6 +21,7 @@ shift 1
 FORCE=false
 DRY_RUN=false
 MAX_FILES=-1
+FILTERSCATE=false
 
 INPUT_FILES=()
 
@@ -44,6 +45,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       DRY_RUN=true
+      shift 1
+      ;;
+    --filterScatE)
+      FILTERSCATE=true
       shift 1
       ;;
     --)
@@ -104,7 +109,7 @@ for input_file in "${INPUT_FILES[@]}"; do
   printf '%s\n' "$input_file" >> "$MANIFEST_FILE"
 done
 
-root -l -b -q "macros/merge_evt_tree.C(\"${MANIFEST_FILE}\",\"${OUTPUT_FILE}\",false,${ROOT_FORCE})"
+root -l -b -q "macros/merge_evt_tree.C(\"${MANIFEST_FILE}\",\"${OUTPUT_FILE}\",false,${ROOT_FORCE},${FILTERSCATE})"
 
 # The raw eventNumber copied from each input file is only unique within that
 # file, so the merged evt_tree contains duplicate event numbers. Reassign it

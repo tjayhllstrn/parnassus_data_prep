@@ -16,7 +16,7 @@ cd /w/hallb-scshelf2102/clas12/users/tjhellst/parnassus_data_prep
 INPUT_DIR=$1
 DATA_VERSION=$2
 OUTPUT_DIR="/volatile/clas12/users/tjhellst/parnassus_data/$2/"
-INPUT_FILE_BASE="*-000*.hipo"
+INPUT_FILE_BASE="*-001*.hipo"
 
 # Enable nullglob to get empty array if no matches (instead of literal pattern)
 shopt -s nullglob

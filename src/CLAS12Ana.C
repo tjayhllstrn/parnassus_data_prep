@@ -170,7 +170,7 @@ std::vector<part> CLAS12Ana::load_mc_particles(const std::unique_ptr<clas12::cla
           parent_idx = mcparticles->getParent(parent_idx)-1;
       }
       if(partstruct.is_CFR!=1) partstruct.is_CFR=0;
-      if(partstruct.truepid==11 && partstruct.trueparentid==0){ // scattered electro
+      if(partstruct.truepid==11 && (partstruct.trueparentid==0 || partstruct.trueparentid==-1)){ // scattered electro
         partstruct.is_scattered_electron=1;
       }
 
