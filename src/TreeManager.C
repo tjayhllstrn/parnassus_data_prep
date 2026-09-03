@@ -564,32 +564,32 @@ class ParnassusTree : public BaseTree {
             tree->Branch("pflow_pt", pflow_pt, "pflow_pt[npflow]/D");
             tree->Branch("pflow_phi", pflow_phi, "pflow_phi[npflow]/D");
             tree->Branch("pflow_theta", pflow_theta, "pflow_theta[npflow]/D");
-            tree->Branch("pflow_eta", pflow_eta, "pflow_eta[npflow]/D");
+            // tree->Branch("pflow_eta", pflow_eta, "pflow_eta[npflow]/D");
             tree->Branch("pflow_vx", pflow_vx, "pflow_vx[npflow]/D");
             tree->Branch("pflow_vy", pflow_vy, "pflow_vy[npflow]/D"); 
             tree->Branch("pflow_vz", pflow_vz, "pflow_vz[npflow]/D"); 
-            tree->Branch("pflow_class", pflow_class, "pflow_class[npflow]/I");
+            // tree->Branch("pflow_class", pflow_class, "pflow_class[npflow]/I");
             tree->Branch("pflow_pdgId", pflow_pdgId, "pflow_pdgId[npflow]/I");
 
             tree->Branch("pflow_scatE", &pflow_scatE, "pflow_scatE/I");
-            tree->Branch("pflow_Q2", &pflow_Q2, "pflow_Q2/D");
-            tree->Branch("pflow_x", &pflow_x, "pflow_x/D");
-            tree->Branch("pflow_W", &pflow_W, "pflow_W/D");
+            // tree->Branch("pflow_Q2", &pflow_Q2, "pflow_Q2/D");
+            // tree->Branch("pflow_x", &pflow_x, "pflow_x/D");
+            // tree->Branch("pflow_W", &pflow_W, "pflow_W/D");
 
             tree->Branch("truth_pt", truth_pt, "truth_pt[ntruth]/D");
-            tree->Branch("truth_eta", truth_eta, "truth_eta[ntruth]/D");
+            // tree->Branch("truth_eta", truth_eta, "truth_eta[ntruth]/D");
             tree->Branch("truth_phi", truth_phi, "truth_phi[ntruth]/D");
             tree->Branch("truth_theta", truth_theta, "truth_theta[ntruth]/D");
             tree->Branch("truth_vx", truth_vx, "truth_vx[ntruth]/D");
             tree->Branch("truth_vy", truth_vy, "truth_vy[ntruth]/D"); 
             tree->Branch("truth_vz", truth_vz, "truth_vz[ntruth]/D"); 
-            tree->Branch("truth_class", truth_class, "truth_class[ntruth]/I");
+            // tree->Branch("truth_class", truth_class, "truth_class[ntruth]/I");
             tree->Branch("truth_pdgId", truth_pdgId, "truth_pdgId[ntruth]/I");
 
             tree->Branch("truth_scatE", &truth_scatE, "truth_scatE/I");
-            tree->Branch("truth_Q2", &truth_Q2, "truth_Q2/D");
-            tree->Branch("truth_x", &truth_x, "truth_x/D");
-            tree->Branch("truth_W", &truth_W, "truth_W/D");
+            // tree->Branch("truth_Q2", &truth_Q2, "truth_Q2/D");
+            // tree->Branch("truth_x", &truth_x, "truth_x/D");
+            // tree->Branch("truth_W", &truth_W, "truth_W/D");
         }
     
         void FillTree(std::vector<part> vec_particles, std::vector<part> vec_mcparticles, 
@@ -603,17 +603,17 @@ class ParnassusTree : public BaseTree {
                 pflow_pt[i] = kin.Pt(par.px, par.py);
                 pflow_phi[i] = par.phi;
                 pflow_theta[i] = par.theta;
-                pflow_eta[i] = kin.eta(par.theta);
+                // pflow_eta[i] = kin.eta(par.theta);
                 pflow_vx[i] = par.vx;
                 pflow_vy[i] = par.vy;
                 pflow_vz[i] = par.vz;
                 pflow_pdgId[i] = par.pid;
-                pflow_class[i] = GetClassID(par.pid);
+                // pflow_class[i] = GetClassID(par.pid);
             }
             pflow_scatE = HasScatteredElectron(vec_particles);
-            pflow_Q2 = pflow_event.Q2;
-            pflow_x = pflow_event.x;
-            pflow_W = pflow_event.W;
+            // pflow_Q2 = pflow_event.Q2;
+            // pflow_x = pflow_event.x;
+            // pflow_W = pflow_event.W;
 
             ntruth = vec_mcparticles.size();
             for( int i = 0 ; i < ntruth; i++){
@@ -621,18 +621,18 @@ class ParnassusTree : public BaseTree {
 
                 truth_pt[i] = kin.Pt(par.truepx, par.truepy);
                 truth_phi[i] = par.truephi;
-                truth_eta[i] = kin.eta(par.truetheta);
+                // truth_eta[i] = kin.eta(par.truetheta);
                 truth_theta[i] = par.truetheta;
                 truth_vx[i] = par.truevx;
                 truth_vy[i] = par.truevy;
                 truth_vz[i] = par.truevz;
                 truth_pdgId[i] = par.truepid;
-                truth_class[i] = GetClassID(par.truepid);       
+                // truth_class[i] = GetClassID(par.truepid);       
             }
             truth_scatE = HasScatteredElectron(vec_mcparticles);
-            truth_Q2 = mc_event.trueQ2;
-            truth_x = mc_event.truex;
-            truth_W = mc_event.trueW;
+            // truth_Q2 = mc_event.trueQ2;
+            // truth_x = mc_event.truex;
+            // truth_W = mc_event.trueW;
 
             tree->Fill();
         }

@@ -7,3 +7,5 @@ macros/*.so
 macros/*.pcm
 HipoSkimmer*
 *.txt
+*.pdf
+*.png

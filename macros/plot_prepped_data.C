@@ -348,9 +348,9 @@ void plot_prepped_data(const char* filename){
     SetReleaseNoteStyle();
     DefineColors();
 
-    std::vector<std::string> vars_to_plot = {"pt", "phi", "theta", "vx", "vy", "vz","Q2","W","x"};
-    std::vector<std::string> x_labels = {"p_{T} [GeV/c]", "#phi [rad]", "#theta [rad]", "v_{x} [cm]", "v_{y} [cm]", "v_{z} [cm]", "Q^{2} [GeV^{2}/c^{2}]", "W [GeV]", "x"};
-    std::vector<std::pair<double, double>> val_ranges {{-0.1,2}, {-3.14159, 3.14159}, {0, 1.6}, {-4, 4}, {-4, 4}, {-10, 10}, {0, 10}, {0, 5}, {0, 1}};
+    std::vector<std::string> vars_to_plot = {"pt", "phi", "theta", "vx", "vy", "vz"};
+    std::vector<std::string> x_labels = {"p_{T} [GeV/c]", "#phi [rad]", "#theta [rad]", "v_{x} [cm]", "v_{y} [cm]", "v_{z} [cm]"};
+    std::vector<std::pair<double, double>> val_ranges {{-0.1,2}, {-3.14159, 3.14159}, {0, 1.6}, {-4, 4}, {-4, 4}, {-10, 10}};
 
     std::unique_ptr<TFile> input_file(TFile::Open(filename, "READ"));
     if (!input_file || input_file->IsZombie()) {
@@ -399,15 +399,15 @@ void plot_prepped_data(const char* filename){
                          outdir + "/compare_npflow_ntruth",
                          -999,-999,20);
 
-    auto reco_class_hist = build_category_histogram(tree, "pflow_class", "hreco_class");
-    auto truth_class_hist = build_category_histogram(tree, "truth_class", "htruth_class");
+    // auto reco_class_hist = build_category_histogram(tree, "pflow_class", "hreco_class");
+    // auto truth_class_hist = build_category_histogram(tree, "truth_class", "htruth_class");
     auto reco_pid_hist = build_category_histogram(tree, "pflow_pdgId", "hreco_pid");
     auto truth_pid_hist = build_category_histogram(tree, "truth_pdgId", "htruth_pid");
 
-    draw_pie_comparison(reco_class_hist.get(),
-                        truth_class_hist.get(),
-                        "classID",
-                        outdir + "/classID_pie_comparison");
+    // draw_pie_comparison(reco_class_hist.get(),
+    //                     truth_class_hist.get(),
+    //                     "classID",
+    //                     outdir + "/classID_pie_comparison");
     draw_pie_comparison(reco_pid_hist.get(),
                         truth_pid_hist.get(),
                         "PID",

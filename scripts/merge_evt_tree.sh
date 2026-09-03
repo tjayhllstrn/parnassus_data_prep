@@ -97,8 +97,7 @@ if [[ -e "$OUTPUT_FILE" && "$FORCE" != true ]]; then
   echo "ERROR: Output file exists. Re-run with --force to overwrite: $OUTPUT_FILE" >&2
   exit 1
 fi
-
-MANIFEST_FILE="$(mktemp)"
+MANIFEST_FILE="${MANIFEST_FILE:=$(mktemp)}"
 trap 'rm -f "$MANIFEST_FILE"' EXIT
 
 for input_file in "${INPUT_FILES[@]}"; do
