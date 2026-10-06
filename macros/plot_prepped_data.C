@@ -348,9 +348,9 @@ void plot_prepped_data(const char* filename){
     SetReleaseNoteStyle();
     DefineColors();
 
-    std::vector<std::string> vars_to_plot = {"pt", "phi", "theta", "vx", "vy", "vz"};
-    std::vector<std::string> x_labels = {"p_{T} [GeV/c]", "#phi [rad]", "#theta [rad]", "v_{x} [cm]", "v_{y} [cm]", "v_{z} [cm]"};
-    std::vector<std::pair<double, double>> val_ranges {{-0.1,2}, {-3.14159, 3.14159}, {0, 1.6}, {-4, 4}, {-4, 4}, {-10, 10}};
+    std::vector<std::string> vars_to_plot = {"pt", "phi", "theta", "beta", "vx", "vy", "vz"};
+    std::vector<std::string> x_labels = {"p_{T} [GeV/c]", "#phi [rad]", "#theta [rad]", "#beta", "v_{x} [cm]", "v_{y} [cm]", "v_{z} [cm]"};
+    std::vector<std::pair<double, double>> val_ranges {{-0.1,2}, {-3.14159, 3.14159}, {0, 1.6}, {0.6, 1}, {-4, 4}, {-4, 4}, {-10, 10}};
 
     std::unique_ptr<TFile> input_file(TFile::Open(filename, "READ"));
     if (!input_file || input_file->IsZombie()) {

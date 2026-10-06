@@ -519,9 +519,9 @@ class ParnassusTree : public BaseTree {
         int ntruth, npflow, eventNumber,truth_scatE, pflow_scatE;
         double pflow_Q2, pflow_x, pflow_W, truth_Q2, truth_x, truth_W;
 
-        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_theta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax];
+        double pflow_pt[kNmax], pflow_phi[kNmax], pflow_eta[kNmax], pflow_theta[kNmax], pflow_vx[kNmax], pflow_vy[kNmax], pflow_vz[kNmax], pflow_beta[kNmax];
         int pflow_class[kNmax], pflow_pdgId[kNmax];
-        double truth_pt[kNmax], truth_eta[kNmax], truth_theta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax];
+        double truth_pt[kNmax], truth_eta[kNmax], truth_theta[kNmax], truth_phi[kNmax], truth_vx[kNmax], truth_vy[kNmax], truth_vz[kNmax], truth_beta[kNmax];
         int truth_class[kNmax], truth_pdgId[kNmax];
 
         Kinematics kin;
@@ -568,6 +568,7 @@ class ParnassusTree : public BaseTree {
             tree->Branch("pflow_vx", pflow_vx, "pflow_vx[npflow]/D");
             tree->Branch("pflow_vy", pflow_vy, "pflow_vy[npflow]/D"); 
             tree->Branch("pflow_vz", pflow_vz, "pflow_vz[npflow]/D"); 
+            tree->Branch("pflow_beta", pflow_beta, "pflow_beta[npflow]/D");
             // tree->Branch("pflow_class", pflow_class, "pflow_class[npflow]/I");
             tree->Branch("pflow_pdgId", pflow_pdgId, "pflow_pdgId[npflow]/I");
 
@@ -583,6 +584,7 @@ class ParnassusTree : public BaseTree {
             tree->Branch("truth_vx", truth_vx, "truth_vx[ntruth]/D");
             tree->Branch("truth_vy", truth_vy, "truth_vy[ntruth]/D"); 
             tree->Branch("truth_vz", truth_vz, "truth_vz[ntruth]/D"); 
+            tree->Branch("truth_beta", truth_beta, "truth_beta[ntruth]/D");
             // tree->Branch("truth_class", truth_class, "truth_class[ntruth]/I");
             tree->Branch("truth_pdgId", truth_pdgId, "truth_pdgId[ntruth]/I");
 
@@ -607,6 +609,7 @@ class ParnassusTree : public BaseTree {
                 pflow_vx[i] = par.vx;
                 pflow_vy[i] = par.vy;
                 pflow_vz[i] = par.vz;
+                pflow_beta[i] = par.beta;
                 pflow_pdgId[i] = par.pid;
                 // pflow_class[i] = GetClassID(par.pid);
             }
@@ -626,6 +629,7 @@ class ParnassusTree : public BaseTree {
                 truth_vx[i] = par.truevx;
                 truth_vy[i] = par.truevy;
                 truth_vz[i] = par.truevz;
+                truth_beta[i] = par.truebeta;
                 truth_pdgId[i] = par.truepid;
                 // truth_class[i] = GetClassID(par.truepid);       
             }
