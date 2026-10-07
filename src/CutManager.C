@@ -171,6 +171,7 @@ bool CutManager::apply_electron_cuts(part particle){
     if(EleSampFrac_pass2(particle)==false) return false;
     if(minEpcal(particle)==false) return false;
     if(caloEdges(particle,0)==false) return false;
+    if(photonBetaCut(particle)==false) return false;
   }
   if(VzCut(particle)==false) return false;
   // if(minEleMomentum(particle)==false) return false;
