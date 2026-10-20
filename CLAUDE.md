@@ -53,6 +53,14 @@ This one must read a raw `.hipo`, not a prepped `.root` — the prepped trees ar
 registry block at the top of `macros/cut_study.C` (one line per cut); the counting machinery lives in
 `src/CutStudy.h`. Results go to stdout plus `<outDir>/<hipo stem>/summary.csv` and `removed_by_pid.csv`.
 
+Build a v7 Parnassus file (`pflow_p`/`truth_p` instead of `*_pt`, unfolded `truth_theta`, e+/e- beta cut)
+straight from the `reco_EventTree`/`mc_EventTree` of processed files, without rerunning the hipo step.
+`"train"` keeps only events with a reco scattered electron; `"test"` keeps every event:
+```
+root -l -b -q 'macros/make_v7.C+("<processed dir>","v7_train.root","train",-1,50000000)'   // nFiles=-1 (all), nEvents
+root -l -b -q 'macros/make_v7.C+("<processed dir>","v7_test.root","test",-1,5000000,200000000)'  // last: first eventNumber
+```
+
 These all require running inside the apptainer container described above.
 
 ACLiC compilation artifacts (`macros/*.d`, `macros/*.pcm`, `macros/*.so`) are build byproducts of running a
@@ -90,6 +98,8 @@ macro once (e.g. `plot_prepped_data.C`) — they are gitignored and safe to dele
   reco or MC branches, fixed-size arrays up to `kNmax=100`), `DihadronTree` (event-level dihadron kinematics),
   and `ParnassusTree` (the ML-facing tree: `pflow_*` reco particles + `truth_*` MC particles, each assigned a
   coarse `class` id via `GetClassID` — 0=charged hadron, 1=electron, 2=muon, 3=neutral hadron, 4=photon, -1=unknown).
+  `ParnassusTree(name, true)` selects the v7 layout (`pflow_p`/`truth_p`, `truth_theta = atan2(truept, truepz)`);
+  the default stays the v6 layout used by `hipo2tree_parnassus.C`.
 - **`Constants.h`** — header-only constants and lookup tables: run-period classification (`runPeriod`),
   beam polarization/energy/torus-bending by run range (`runPolarization`, `runBeamEnergy`, `runTorusBending`),
   and large hardcoded fit-parameter tables for DC fiducial cuts and calorimeter sampling-fraction cuts,

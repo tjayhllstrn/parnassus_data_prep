@@ -78,7 +78,7 @@ double Kinematics::W(double Q2, double mT, double nu){//from W=(p2+q)
 } 
 
 double Kinematics::th(double Pt, double Pz){
-  return abs(atan(Pt/Pz));
+  return atan2(Pt,Pz);
 }
 
 double Kinematics::eta(double th){
