@@ -2,7 +2,7 @@
 //
 // Each entry of the two EventTrees is turned back into the std::vector<part> lists that hipo2tree_parnassus.C
 // filled them from, and written with ParnassusTree (src/TreeManager.C) in its v7 layout:
-//   1. pflow_p / truth_p (momentum magnitude, GeV) in place of pflow_pt / truth_pt.
+//   1. pflow_p / truth_p (momentum magnitude, GeV) added next to pflow_pt / truth_pt (kept, e.g. for Ht).
 //   2. truth_theta unfolded to [0, pi], atan2(truept, truepz). The stored truetheta comes from Kinematics::th,
 //      which folds backward-going particles (pz < 0) into the forward hemisphere.
 // The pflow e+/e- beta cut is applied here (it is not in the v5 processed files): e+/e- outside CutManager's
@@ -138,12 +138,15 @@ int make_v7(const char *input, const char *outFile, const char *mode, int nFiles
     // Input buffers.
     int recoN = 0, mcN = 0;
     double Q2 = 0;
-    double p[kNmax], phi[kNmax], theta[kNmax], vx[kNmax], vy[kNmax], vz[kNmax], beta[kNmax], E[kNmax];
-    double truep[kNmax], truept[kNmax], truepz[kNmax], truephi[kNmax], truevx[kNmax], truevy[kNmax], truevz[kNmax], truebeta[kNmax];
+    double px[kNmax], py[kNmax], p[kNmax], phi[kNmax], theta[kNmax], vx[kNmax], vy[kNmax], vz[kNmax], beta[kNmax], E[kNmax];
+    double truepx[kNmax], truepy[kNmax], truep[kNmax], truept[kNmax], truepz[kNmax], truephi[kNmax], truevx[kNmax], truevy[kNmax],
+        truevz[kNmax], truebeta[kNmax];
     int pid[kNmax], truepid[kNmax], trueparentid[kNmax];
     auto recoPart = [&](int j) {
         part par;
         par.pid = pid[j];
+        par.px = px[j];
+        par.py = py[j];
         par.p = p[j];
         par.E = E[j];
         par.phi = phi[j];
@@ -171,10 +174,13 @@ int make_v7(const char *input, const char *outFile, const char *mode, int nFiles
             failed = true;
             break;
         }
-        enable(reco, {"Nmax", "Q2", "p", "phi", "theta", "vx", "vy", "vz", "beta", "E", "pid"});
-        enable(mc, {"Nmax", "truep", "truept", "truepz", "truephi", "truevx", "truevy", "truevz", "truebeta", "truepid", "trueparentid"});
+        enable(reco, {"Nmax", "Q2", "px", "py", "p", "phi", "theta", "vx", "vy", "vz", "beta", "E", "pid"});
+        enable(mc, {"Nmax", "truepx", "truepy", "truep", "truept", "truepz", "truephi", "truevx", "truevy", "truevz", "truebeta",
+                    "truepid", "trueparentid"});
         reco->SetBranchAddress("Nmax", &recoN);
         reco->SetBranchAddress("Q2", &Q2);
+        reco->SetBranchAddress("px", px);
+        reco->SetBranchAddress("py", py);
         reco->SetBranchAddress("p", p);
         reco->SetBranchAddress("phi", phi);
         reco->SetBranchAddress("theta", theta);
@@ -185,6 +191,8 @@ int make_v7(const char *input, const char *outFile, const char *mode, int nFiles
         reco->SetBranchAddress("E", E);
         reco->SetBranchAddress("pid", pid);
         mc->SetBranchAddress("Nmax", &mcN);
+        mc->SetBranchAddress("truepx", truepx);
+        mc->SetBranchAddress("truepy", truepy);
         mc->SetBranchAddress("truep", truep);
         mc->SetBranchAddress("truept", truept);
         mc->SetBranchAddress("truepz", truepz);
@@ -241,6 +249,8 @@ int make_v7(const char *input, const char *outFile, const char *mode, int nFiles
                 part par;
                 par.pid = truepid[j];
                 par.truepid = truepid[j];
+                par.truepx = truepx[j];
+                par.truepy = truepy[j];
                 par.truep = truep[j];
                 par.truept = truept[j];
                 par.truepz = truepz[j];
