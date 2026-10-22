@@ -91,6 +91,9 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
     case 11:
       pass = apply_electron_cuts(particle);
       break;
+    case -11:
+      pass = leptonBetaCut(particle);
+      break;
     case 211:
       pass = apply_pion_cuts(particle,electron,electron_found);
       break;
@@ -125,8 +128,8 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
             pass = false;
     }
 
-    // FOR PARNASSUS: apply pt cut
-    if(maxPtCut(particle)==false){
+    // FOR PARNASSUS: apply momentum cut
+    if(maxPCut(particle)==false){
             pass = false;
     }
 
@@ -159,9 +162,9 @@ bool CutManager::FTLeptonPhotonCut(part particle){
   return true;
 }
 
-// FOR PARNASSUS: maximum transverse momentum cut
-bool CutManager::maxPtCut(part particle){
-  if(particle.pt > 2.5) return false;
+// FOR PARNASSUS: maximum momentum cut at the beam energy
+bool CutManager::maxPCut(part particle){
+  if(particle.p > 10.6) return false;
   return true;
 }
 
@@ -171,7 +174,7 @@ bool CutManager::apply_electron_cuts(part particle){
     if(EleSampFrac_pass2(particle)==false) return false;
     if(minEpcal(particle)==false) return false;
     if(caloEdges(particle,0)==false) return false;
-    if(photonBetaCut(particle)==false) return false;
+    if(leptonBetaCut(particle)==false) return false;
   }
   if(VzCut(particle)==false) return false;
   // if(minEleMomentum(particle)==false) return false;
@@ -763,8 +766,14 @@ bool CutManager::photonElectronAngle(part particle_A, part particle_B){
 }
 
 bool CutManager::photonBetaCut(part particle){
-    
+
   if(particle.beta<0.9||particle.beta>1.1) return false;
+  return true;
+}
+
+// e+/e-: REC::Particle beta has rare timing failures (|beta| up to ~1500); real leptons here have beta = 1
+bool CutManager::leptonBetaCut(part particle){
+  if(particle.beta<=0.8||particle.beta>=1.2) return false;
   return true;
 }
 

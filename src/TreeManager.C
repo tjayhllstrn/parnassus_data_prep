@@ -516,10 +516,8 @@ class DihadronTree : public BaseTree {
 class ParnassusTree : public BaseTree {
     private:
         const static int kNmax = 100;
-        // v7 layout: pflow_p/truth_p (momentum magnitude) added next to pflow_pt/truth_pt, and truth_theta
-        // unfolded to [0, pi] as atan2(truept, truepz). par.truetheta comes from Kinematics::th, which folds
-        // particles with pz < 0 into the forward hemisphere.
-        bool v7;
+        // v7 layout: pflow_p/truth_p (momentum magnitude) next to pflow_pt/truth_pt, and truth_theta as the
+        // true polar angle in [0, pi], atan2(truept, truepz).
         double pflow_p[kNmax], truth_p[kNmax];
         int ntruth, npflow, eventNumber,truth_scatE, pflow_scatE;
         double pflow_Q2, pflow_x, pflow_W, truth_Q2, truth_x, truth_W;
@@ -555,7 +553,7 @@ class ParnassusTree : public BaseTree {
 
         
     public:
-        ParnassusTree(const char * treename, bool v7Layout = false) : BaseTree(treename), v7(v7Layout) {
+        ParnassusTree(const char * treename) : BaseTree(treename) {
             CreateBranches();
         }
     
@@ -567,7 +565,7 @@ class ParnassusTree : public BaseTree {
             tree->Branch("npflow",&npflow,"npflow/I");
             
             tree->Branch("pflow_pt", pflow_pt, "pflow_pt[npflow]/D");
-            if (v7) tree->Branch("pflow_p", pflow_p, "pflow_p[npflow]/D");
+            tree->Branch("pflow_p", pflow_p, "pflow_p[npflow]/D");
             tree->Branch("pflow_phi", pflow_phi, "pflow_phi[npflow]/D");
             tree->Branch("pflow_theta", pflow_theta, "pflow_theta[npflow]/D");
             // tree->Branch("pflow_eta", pflow_eta, "pflow_eta[npflow]/D");
@@ -584,7 +582,7 @@ class ParnassusTree : public BaseTree {
             // tree->Branch("pflow_W", &pflow_W, "pflow_W/D");
 
             tree->Branch("truth_pt", truth_pt, "truth_pt[ntruth]/D");
-            if (v7) tree->Branch("truth_p", truth_p, "truth_p[ntruth]/D");
+            tree->Branch("truth_p", truth_p, "truth_p[ntruth]/D");
             // tree->Branch("truth_eta", truth_eta, "truth_eta[ntruth]/D");
             tree->Branch("truth_phi", truth_phi, "truth_phi[ntruth]/D");
             tree->Branch("truth_theta", truth_theta, "truth_theta[ntruth]/D");
@@ -634,7 +632,7 @@ class ParnassusTree : public BaseTree {
                 truth_p[i] = par.truep;
                 truth_phi[i] = par.truephi;
                 // truth_eta[i] = kin.eta(par.truetheta);
-                truth_theta[i] = v7 ? atan2(par.truept, par.truepz) : par.truetheta;
+                truth_theta[i] = atan2(par.truept, par.truepz);
                 truth_vx[i] = par.truevx;
                 truth_vy[i] = par.truevy;
                 truth_vz[i] = par.truevz;

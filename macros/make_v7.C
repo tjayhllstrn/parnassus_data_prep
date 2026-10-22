@@ -1,13 +1,16 @@
 // Build a Parnassus v7 evt_tree directly from the reco_EventTree and mc_EventTree of processed per-hipo files.
 //
-// Each entry of the two EventTrees is turned back into the std::vector<part> lists that hipo2tree_parnassus.C
-// filled them from, and written with ParnassusTree (src/TreeManager.C) in its v7 layout:
-//   1. pflow_p / truth_p (momentum magnitude, GeV) added next to pflow_pt / truth_pt (kept, e.g. for Ht).
-//   2. truth_theta unfolded to [0, pi], atan2(truept, truepz). The stored truetheta comes from Kinematics::th,
-//      which folds backward-going particles (pz < 0) into the forward hemisphere.
-// The pflow e+/e- beta cut is applied here (it is not in the v5 processed files): e+/e- outside CutManager's
-// beta window (CutManager::photonBetaCut, 0.9 <= beta <= 1.1) are removed. evt_tree is not read, so it does
-// not matter whether the input has pflow_beta/truth_beta there.
+// For processed files made before hipo2tree_parnassus.C wrote v7 itself (e.g. v5); new hipo runs need no
+// conversion. Each entry of the two EventTrees is turned back into the std::vector<part> lists
+// hipo2tree_parnassus.C filled them from, and written with ParnassusTree (src/TreeManager.C):
+//   1. pflow_p / truth_p (momentum magnitude, GeV) next to pflow_pt / truth_pt (kept, e.g. for Ht).
+//   2. truth_theta unfolded to [0, pi], atan2(truept, truepz). Old files' truetheta came from the folding
+//      abs(atan(pt/pz)) version of Kinematics::th.
+// The pflow e+/e- beta cut is applied here (it is not in old processed files): e+/e- failing
+// CutManager::leptonBetaCut (0.8 < beta < 1.2) are removed. evt_tree is not read, so it does not matter
+// whether the input has pflow_beta/truth_beta there.
+// Unlike a fresh hipo run, old files keep their pt > 2.5 GeV reco cut (now p > 10.6 GeV) and lack truth
+// particles above 179 deg (the 1 deg truth cut was applied to the folded angle).
 //
 // Scattered electrons (ParnassusTree sets pflow_scatE/truth_scatE from part.is_scattered_electron):
 //   reco: hipo2tree_parnassus.C takes the highest-energy pid 11 particle and fills the reco DIS variables only if
@@ -61,11 +64,11 @@ namespace {
 
 const int kNmax = 100;  // array size used by EventTree/ParnassusTree in src/TreeManager.C
 
-// CutManager keeps its cuts protected (production code goes through filter_particles); expose only its beta
-// window, the cut it applies to photons and to FD electrons.
+// CutManager keeps its cuts protected (production code goes through filter_particles); expose only its e+/e-
+// beta window.
 class BetaCut : public CutManager {
    public:
-    using CutManager::photonBetaCut;
+    using CutManager::leptonBetaCut;
 };
 
 bool ends_with(const std::string &value, const std::string &suffix) {
@@ -128,7 +131,7 @@ int make_v7(const char *input, const char *outFile, const char *mode, int nFiles
     }
     fout->SetCompressionSettings(101);
     fout->cd();
-    ParnassusTree treeParnassus("evt_tree", true);
+    ParnassusTree treeParnassus("evt_tree");
     treeParnassus.GetTree()->SetAutoSave(0);  // a single evt_tree cycle in the output
     BetaCut betaCut;
     EVENT recoEvent, mcEvent;  // FillTree takes them; the DIS branches are not written
@@ -227,14 +230,14 @@ int make_v7(const char *input, const char *outFile, const char *mode, int nFiles
                 if (scatIdx < 0) ++nNoElectronQ2;
                 else ++nScatEIn;
             }
-            const bool scatE = scatIdx >= 0 && betaCut.photonBetaCut(recoPart(scatIdx));
+            const bool scatE = scatIdx >= 0 && betaCut.leptonBetaCut(recoPart(scatIdx));
             if (scatIdx >= 0 && !scatE) ++nScatECut;
             if (train && !scatE) continue;
 
             vec_particles.clear();
             for (int j = 0; j < recoN; ++j) {
                 part par = recoPart(j);
-                if (isLepton(j) && !betaCut.photonBetaCut(par)) {
+                if (isLepton(j) && !betaCut.leptonBetaCut(par)) {
                     ++nLeptonsCut;
                     continue;
                 }

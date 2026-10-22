@@ -40,7 +40,7 @@ class ProbeableCutManager : public CutManager {
   // cuts applied to every particle regardless of PID
   using CutManager::thetaRangeCut;
   using CutManager::FTLeptonPhotonCut;
-  using CutManager::maxPtCut;
+  using CutManager::maxPCut;
 
   // whole per-PID cut groups
   using CutManager::apply_electron_cuts;
@@ -57,6 +57,7 @@ class ProbeableCutManager : public CutManager {
   using CutManager::chi2pid;
   using CutManager::vz_e_pi;
   using CutManager::photonBetaCut;
+  using CutManager::leptonBetaCut;
   using CutManager::photonElectronAngle;
   using CutManager::minNeutronEnergy;
 

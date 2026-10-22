@@ -85,8 +85,8 @@ std::vector<CutProbe> build_cut_registry() {
              [](CM& cm, const part& p){ return cm.thetaRangeCut(p); });
   add_simple("global", "FT_e_gamma_only",   ALL_PIDS, ALL_REGIONS,
              [](CM& cm, const part& p){ return cm.FTLeptonPhotonCut(p); });
-  add_simple("global", "pt_max_2.5",        ALL_PIDS, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.maxPtCut(p); });
+  add_simple("global", "p_max_10.6",        ALL_PIDS, ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.maxPCut(p); });
   add_simple("global", "unknown_pid_reject", {0},     ALL_REGIONS,
              [](CM&, const part&){ return false; });  // `case 0:` in filter_particles
   add_simple("global", "is_in_FD",             ALL_PIDS, ALL_REGIONS,
@@ -101,8 +101,14 @@ std::vector<CutProbe> build_cut_registry() {
              [](CM& cm, const part& p){ return cm.minEpcal(p); });
   add_simple("electron", "caloEdges",    {11}, IN_FD_ONLY,
              [](CM& cm, const part& p){ return cm.caloEdges(p, 0); });
+  add_simple("electron", "leptonBetaCut", {11}, IN_FD_ONLY,
+             [](CM& cm, const part& p){ return cm.leptonBetaCut(p); });
   add_simple("electron", "VzCut",        {11}, ALL_REGIONS,
              [](CM& cm, const part& p){ return cm.VzCut(p); });
+
+  // --- positron cuts (case -11 in filter_particles) ------------------------
+  add_simple("positron", "leptonBetaCut", {-11}, ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.leptonBetaCut(p); });
 
   // --- charged pion cuts (apply_pion_cuts) ---------------------------------
   add_simple("pion", "DC_fiducial",     {211,-211}, IN_FD_ONLY,

@@ -27,7 +27,7 @@ class CutManager{
   // Cuts applied to every particle regardless of PID
   bool thetaRangeCut(part);
   bool FTLeptonPhotonCut(part);
-  bool maxPtCut(part);
+  bool maxPCut(part);
   bool apply_electron_cuts(part);
   bool apply_pion_cuts(part,part,bool);
   bool apply_photon_cuts(part,part,bool);
@@ -51,6 +51,7 @@ class CutManager{
   bool photonMinEtot(part);
   bool photonElectronAngle(part,part);
   bool photonBetaCut(part);
+  bool leptonBetaCut(part);
   bool vz_e_pi(part,part);
  private:
         
