@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <string>
 
-// root -l -b -q 'macros/hipo2tree_parnassus.C("/cache/clas12/rg-a/production/montecarlo/clasdis_pass2/fa18_inb/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","prepped_data",-1)'
+// clas12root -l -b -q 'macros/hipo2tree_parnassus.C("/cache/clas12/rg-a/production/montecarlo/clasdis_pass2/fa18_inb/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","prepped_data",-1)'
 
 int hipo2tree_parnassus(const char* hipoFile = "",
     const char* outDir = "",

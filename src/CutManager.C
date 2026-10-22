@@ -713,7 +713,7 @@ bool CutManager::minEpcal(part particle){
 bool CutManager::caloEdges(part particle,int strength){
 
   // Take the deepest calo with energy deposited as the sector
-  sector = particle.pcal_sector;
+  int sector = particle.sector;
   double min_lu,max_lu,min_lv,max_lv,min_lw,max_lw;
   if(strength==0){
     min_lu=9;

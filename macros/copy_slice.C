@@ -1,8 +1,8 @@
 // copy_slice.C  —  root -l -b -q copy_slice.C
 void copy_slice(const char* in  = "input.root",
                 const char* out = "output.root",
-                Long64_t first  = 28000000,
-                Long64_t n      = 1000000)
+                Long64_t first  = 200000000,
+                Long64_t n      = 5000000)
 {
    TFile* fin = TFile::Open(in);
    TTree* tin = (TTree*)fin->Get("evt_tree");
