@@ -91,25 +91,34 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
     case 11:
       pass = apply_electron_cuts(particle);
       break;
-    case -11:
-      pass = leptonBetaCut(particle);
-      break;
     case 211:
       pass = apply_pion_cuts(particle,electron,electron_found);
       break;
     case -211:
       pass = apply_pion_cuts(particle,electron,electron_found);
       break;
+    case 321:
+      pass = apply_charged_hadron_cuts(particle);
+      break;
+    case -321:
+      pass = apply_charged_hadron_cuts(particle);
+      break;
+    case 2212:
+      pass = apply_charged_hadron_cuts(particle);
+      break;
+    case -2212:
+      pass = chi2pid(particle,2);
+      break;
+    case 45:
+      pass = chi2pid(particle,2);
+      break;
     case 22:
       pass = apply_photon_cuts(particle,electron,electron_found);
-      break;
-    case 2112:
-      pass = apply_neutron_cuts(particle);
       break;
     case 0:
       pass = false; //unknown particle, don't pass
       break;
-    default:
+    default: 
       pass = true;
       break;
     }
@@ -172,20 +181,20 @@ bool CutManager::apply_electron_cuts(part particle){
   if (is_in_FD(particle)) { //only apply Fiducial cut to particles that are in the forward detector
     if(DC_fiducial_cut(particle)==false) return false;
     if(EleSampFrac_pass2(particle)==false) return false;
-    if(minEpcal(particle)==false) return false;
+    // if(minEpcal(particle)==false) return false; this is already applied int he EB
     if(caloEdges(particle,0)==false) return false;
-    if(leptonBetaCut(particle)==false) return false;
+    // if(leptonBetaCut(particle)==false) return false;
   }
-  if(VzCut(particle)==false) return false;
+  // if(VzCut(particle)==false) return false;
   // if(minEleMomentum(particle)==false) return false;
   return true;
 }
 
-bool CutManager::apply_neutron_cuts(part particle){
-  if(minNeutronEnergy(particle)==false) return false;
+bool CutManager::apply_charged_hadron_cuts(part particle){
   if (is_in_FD(particle)) {
-    if(caloEdges(particle,0)==false) return false;
+    if(DC_fiducial_cut(particle)==false) return false;
   }
+  if(chi2pid(particle,2)==false) return false;
   return true;
 }
 
@@ -194,24 +203,24 @@ bool CutManager::apply_pion_cuts(part particle, part electron, bool electron_fou
   if (is_in_FD(particle)) { //only apply Fiducial cut to particles that are in the forward detector
     if(DC_fiducial_cut(particle)==false) return false;
   }
-  if(chi2pid(particle,2)==false) return false; //set to 2 to only have chi2 3 sigma cut
-  if (electron_found) {
-    if(vz_e_pi(particle,electron)==false) return false;
-  }
+  if(chi2pid(particle,0)==false) return false; //set to 2 to only have chi2 3 sigma cut
+  // if (electron_found) {
+  //   if(vz_e_pi(particle,electron)==false) return false;
+  // }
   //if(hadronStatus(particle)==false) return false; DEPRECATED, handled in event loop
   return true;
 }
 
 // Apply all relevant photon cuts
 bool CutManager::apply_photon_cuts(part particle, part electron, bool electron_found){
-  if(photonBetaCut(particle)==false) return false;
+  // if(photonBetaCut(particle)==false) return false;
   if (is_in_FD(particle)) { //only apply Fiducial cut to particles that are in the forward detector
-    if(caloEdges(particle,0)==false) return false;
+    if(caloEdges(particle,1)==false) return false;
     if(minEpcal(particle)==false) return false;
   }
-  if (electron_found) {
-    if(photonElectronAngle(particle,electron)==false) return false;
-  }
+  // if (electron_found) {
+  //   if(photonElectronAngle(particle,electron)==false) return false;
+  // }
   return true;
 }
 
@@ -231,23 +240,12 @@ bool CutManager::DC_fiducial_cut(part particle){
   }
   }
   else{//perform pass2 FD cuts
-    if(_torusBending==-1){
-      if(pid==11 || pid==-211) return DC_fiducial_cut_edge(particle,0);
-      if(pid==211 || pid==2212) return DC_fiducial_cut_edge(particle,1);
-      return true;
-    }
-    else if(_torusBending==1){
-      if(pid==11 || pid==-211) return DC_fiducial_cut_edge(particle,1);
-      if(pid==211 || pid==2212) return DC_fiducial_cut_edge(particle,0);
-      return true;
-    }
-    else return true;
+    return DC_fiducial_cut_edge(particle,_torusBending);
   }
   return true;
 }
 //new pass2 data has new variable "edge" which is the distance (cm) to the nearest edge, 0 is inbending particle 1 is outbending particle
 bool CutManager::DC_fiducial_cut_edge(part particle,int bending){
-    //std::cout<<"#\e[1;32mRunning DC_fiducial_cut_edge. bending: "<<bending<<"pid: "<<particle.pid<<"#\e[0m"<<std::endl;
     double edge_1 = particle.edge_1; //region 1 edge
     double edge_2 = particle.edge_2; //region 2 edge
     double edge_3 = particle.edge_3; //region 3 edge
@@ -256,20 +254,33 @@ bool CutManager::DC_fiducial_cut_edge(part particle,int bending){
     double py = particle.py;
     double pz = particle.pz;
     double theta = 180 / PI * acos(pz / sqrt(pow(px,2) + pow(py,2) + pow(pz,2)));
+    int pid = 0;
+    double pars[3];
+
+    switch (particle.pid)
+      {
+      case 11: pid = 0; break;
+      case 2212: pid = 1; break;
+      case 211: pid = 2; break;
+      case -211: pid = 3; break;
+      case 321: pid = 4; break;
+      case -321: pid = 5; break;
+      default: return false; break;
+      }
     
-    if(bending==0){
-        if (theta < 10) {
-            return edge_1 > 10 && edge_2 > 10 && edge_3 > 10;
-        }
-        if (theta >= 10) {
-            return edge_1 > 3 && edge_2 > 3 && edge_3 > 10;
-        }
+    if(bending==-1){
+        pars[0] = minparams_in_edge[pid][0];
+        pars[1] = minparams_in_edge[pid][1];
+        pars[2] = minparams_in_edge[pid][2];
     }
-    else if(bending==1){
-        return edge_1 > 3 && edge_2 > 3 && edge_3 > 10;
+    else if (bending==1){
+        pars[0] = minparams_out_edge[pid][0];
+        pars[1] = minparams_out_edge[pid][1];
+        pars[2] = minparams_out_edge[pid][2];
     }
-    return true;
-    
+    else {pars[0] = 0.0; pars[1] = 0.0; pars[2] = 0.0;} // Default return values
+
+    return edge_1 > pars[0] && edge_2 > pars[1] && edge_3 > pars[2];
     
 }
 // 
@@ -452,38 +463,39 @@ bool CutManager::hadronStatus(part particle){
 // Perform cut on the chi2pid as a function of particle momentum
 bool CutManager::chi2pid(part particle,int isStrict){
   
-  bool passChargedPionChi2=false;
+  bool pass=false;
   int pid=particle.pid;
   double chi2=particle.chi2;
   double p=particle.p;
   if(pid==211||pid==-211){
     // Determine pion charge dependent C value
-    float C = 0.0; //These C values are sigma of the projected y gaussian for respective particle.
+    float C = 0.0; 
     (pid==211 ? C=0.88 : C=0.93);
     if(chi2<-3*C) return false;
-    // 2 different pion chi2pid regions
-    // standard
-    // strict
     if(isStrict==0){
       if(p<2.44)
-	passChargedPionChi2=chi2<C*3;
+	        pass=chi2<C*3;
       else
-	passChargedPionChi2=chi2<C*(0.00869 + 14.98587 * exp(-p/1.18236) + 1.81751 * exp(-p/4.86394));
+	        pass=chi2<C*(0.00869 + 14.98587 * exp(-p/1.18236) + 1.81751 * exp(-p/4.86394));
     } 
     else if(isStrict==1){
       if(p<2.44)
-	passChargedPionChi2=chi2<C*3;
+	      pass=chi2<C*3;
       else if(p<4.6)
-	passChargedPionChi2=chi2< C * (0.00869 + 14.98587 * exp(-p/1.18236) + 1.81751 * exp(-p/4.86394));
+	      pass=chi2< C * (0.00869 + 14.98587 * exp(-p/1.18236) + 1.81751 * exp(-p/4.86394));
       else
-	passChargedPionChi2=chi2< C * (-1.14099 + 24.14992 * exp(-p/1.36554) + 2.66876 * exp(-p/6.80552));
+	      pass=chi2< C * (-1.14099 + 24.14992 * exp(-p/1.36554) + 2.66876 * exp(-p/6.80552));
 
     }
     else if(isStrict==2){ //bypass chi2pid and only keep 3 sigma cut
-        passChargedPionChi2=chi2<C*3;
+        pass=chi2<C*3;
     }
   }
-  return passChargedPionChi2;
+
+  else{
+    pass=abs(chi2)<3; //just a normal 3 sigma cut for all non-pions
+  }
+  return pass;
 }
 
 
@@ -699,7 +711,9 @@ bool CutManager::minEpcal(part particle){
 
 // Fiducial cut on calorimeter edges
 bool CutManager::caloEdges(part particle,int strength){
-    
+
+  // Take the deepest calo with energy deposited as the sector
+  sector = particle.pcal_sector;
   double min_lu,max_lu,min_lv,max_lv,min_lw,max_lw;
   if(strength==0){
     min_lu=9;
@@ -726,7 +740,11 @@ bool CutManager::caloEdges(part particle,int strength){
       min_lw=9;
       max_lw=400;
     }
-    
+  
+  if (strength==0 && sector==4){
+    min_lv =13.5; //due to a dead bar in the pcal
+  }
+
   if(particle.pcal_lv < min_lv || particle.pcal_lv > max_lv) return false;
   if(particle.pcal_lw < min_lw || particle.pcal_lw > max_lw) return false;
   return true;
