@@ -44,6 +44,7 @@ class CutManager{
   bool minNeutronEnergy(part);
   bool hadronStatus(part);
   bool VzCut(part);
+  bool VzCut_outliers(part);
   bool minEpcal(part);
   bool caloEdges(part,int);
   bool Ele3calo(part);
@@ -52,6 +53,7 @@ class CutManager{
   bool photonElectronAngle(part,part);
   bool photonBetaCut(part);
   bool leptonBetaCut(part);
+  bool betaCut_outlier(part);
   bool vz_e_pi(part,part);
  private:
         
