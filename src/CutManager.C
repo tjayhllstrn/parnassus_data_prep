@@ -91,6 +91,9 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
     case 11:
       pass = apply_electron_cuts(particle);
       break;
+    case -11:
+      pass = betaCut_outlier(particle) && VzCut_outliers(particle);
+      break;
     case 211:
       pass = apply_pion_cuts(particle,electron,electron_found);
       break;
@@ -107,10 +110,10 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
       pass = apply_charged_hadron_cuts(particle);
       break;
     case -2212:
-      pass = chi2pid(particle,2);
+      pass = chi2pid(particle,2) && VzCut_outliers(particle);
       break;
     case 45:
-      pass = chi2pid(particle,2);
+      pass = chi2pid(particle,2) && VzCut_outliers(particle);
       break;
     case 22:
       pass = apply_photon_cuts(particle,electron,electron_found);
@@ -183,9 +186,9 @@ bool CutManager::apply_electron_cuts(part particle){
     if(EleSampFrac_pass2(particle)==false) return false;
     // if(minEpcal(particle)==false) return false; this is already applied int he EB
     if(caloEdges(particle,0)==false) return false;
-    // if(leptonBetaCut(particle)==false) return false;
   }
-  // if(VzCut(particle)==false) return false;
+  if(betaCut_outlier(particle)==false) return false;
+  if(VzCut_outliers(particle)==false) return false;
   // if(minEleMomentum(particle)==false) return false;
   return true;
 }
@@ -195,6 +198,7 @@ bool CutManager::apply_charged_hadron_cuts(part particle){
     if(DC_fiducial_cut(particle)==false) return false;
   }
   if(chi2pid(particle,2)==false) return false;
+  if(VzCut_outliers(particle)==false) return false;
   return true;
 }
 
@@ -203,7 +207,8 @@ bool CutManager::apply_pion_cuts(part particle, part electron, bool electron_fou
   if (is_in_FD(particle)) { //only apply Fiducial cut to particles that are in the forward detector
     if(DC_fiducial_cut(particle)==false) return false;
   }
-  if(chi2pid(particle,0)==false) return false; //set to 2 to only have chi2 3 sigma cut
+  if(chi2pid(particle,0)==false) return false; 
+  if(VzCut_outliers(particle)==false) return false;
   // if (electron_found) {
   //   if(vz_e_pi(particle,electron)==false) return false;
   // }
@@ -218,6 +223,7 @@ bool CutManager::apply_photon_cuts(part particle, part electron, bool electron_f
     if(caloEdges(particle,1)==false) return false;
     if(minEpcal(particle)==false) return false;
   }
+  if(betaCut_outlier(particle)==false) return false;
   // if (electron_found) {
   //   if(photonElectronAngle(particle,electron)==false) return false;
   // }
@@ -672,6 +678,10 @@ bool CutManager::minNeutronEnergy(part particle){
 }
 
 
+bool CutManager::VzCut_outliers(part particle){
+    return -40 < particle.vz && particle.vz < 30;
+}
+
 // Vz in target cell cut
 bool CutManager::VzCut(part particle){
   
@@ -792,6 +802,11 @@ bool CutManager::photonBetaCut(part particle){
 // e+/e-: REC::Particle beta has rare timing failures (|beta| up to ~1500); real leptons here have beta = 1
 bool CutManager::leptonBetaCut(part particle){
   if(particle.beta<=0.8||particle.beta>=1.2) return false;
+  return true;
+}
+
+bool CutManager::betaCut_outlier(part particle){
+  if(particle.beta<=0.0||particle.beta>=2.0) return false;
   return true;
 }
 
