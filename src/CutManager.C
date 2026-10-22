@@ -113,10 +113,13 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
       pass = chi2pid(particle,2) && VzCut_outliers(particle);
       break;
     case 45:
-      pass = chi2pid(particle,2) && VzCut_outliers(particle);
+      pass = false;
       break;
     case 22:
       pass = apply_photon_cuts(particle,electron,electron_found);
+      break;
+    case 2112:
+      pass = VzCut_outliers(particle);
       break;
     case 0:
       pass = false; //unknown particle, don't pass
@@ -142,6 +145,11 @@ std::vector<part> CutManager::filter_particles(std::vector<part> particles){
 
     // FOR PARNASSUS: apply momentum cut
     if(maxPCut(particle)==false){
+            pass = false;
+    }
+
+    // Transverse vertex outlier cut (beam at x = y = 0)
+    if(VrCut_outliers(particle)==false){
             pass = false;
     }
 
@@ -224,6 +232,7 @@ bool CutManager::apply_photon_cuts(part particle, part electron, bool electron_f
     if(minEpcal(particle)==false) return false;
   }
   if(betaCut_outlier(particle)==false) return false;
+  if(VzCut_outliers(particle)==false) return false;
   // if (electron_found) {
   //   if(photonElectronAngle(particle,electron)==false) return false;
   // }
@@ -680,6 +689,11 @@ bool CutManager::minNeutronEnergy(part particle){
 
 bool CutManager::VzCut_outliers(part particle){
     return -40 < particle.vz && particle.vz < 30;
+}
+
+// Remove unphysical transverse vertices: sqrt(vx^2 + vy^2) < 20 cm
+bool CutManager::VrCut_outliers(part particle){
+    return particle.vx*particle.vx + particle.vy*particle.vy < 20.0*20.0;
 }
 
 // Vz in target cell cut

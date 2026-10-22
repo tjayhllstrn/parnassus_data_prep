@@ -45,6 +45,7 @@ class CutManager{
   bool hadronStatus(part);
   bool VzCut(part);
   bool VzCut_outliers(part);
+  bool VrCut_outliers(part);
   bool minEpcal(part);
   bool caloEdges(part,int);
   bool Ele3calo(part);
