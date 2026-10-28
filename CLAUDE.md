@@ -43,8 +43,9 @@ Sanity-check the particle-class assignment (`pflow_class`/`truth_class`) in a pr
 root -l -b -q 'macros/check_classID.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001_small_version.root")'
 ```
 
-Measure what each particle-level cut does on its own — for every cut in the registry, apply only that cut
-and count how many events end up with no surviving particles (`npflow==0`):
+Measure what each particle-level cut does — for every cut in the registry, apply only that cut (ALONE: particles
+removed, events left with `npflow==0`) and apply it after every other production cut (N-1: what the final dataset
+loses to it). The registry's production cuts are cross-checked against `filter_particles` every event:
 ```
 root -l -b -q 'macros/cut_study.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","plots/cut_study",20000)'
 ```

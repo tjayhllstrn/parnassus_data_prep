@@ -9,9 +9,12 @@
 #include <filesystem>
 #include <string>
 
-// Measure what each particle-level cut does on its own: for every cut in the
-// registry below, apply ONLY that cut and count how many events are left with
-// no surviving particles (i.e. would be written with npflow==0).
+// Measure what each particle-level cut does: for every cut in the registry
+// below, apply ONLY that cut (ALONE) and count the particles it removes and the
+// events it leaves with no surviving particles (npflow==0); and apply it after
+// every other production cut (N-1), which is what the final dataset loses to it.
+// The registry's production cuts are checked against filter_particles every
+// event, and the report says whether they still match.
 //
 // Must be run on a raw .hipo -- the prepped ROOT files are already filtered
 // (hipo2tree_parnassus.C filters before it fills any tree), so the pre-cut
@@ -43,8 +46,11 @@
 //  filter_particles does).
 //
 //  The gating must mirror CutManager::filter_particles / apply_*_cuts, or the
-//  numbers are meaningless: e.g. chi2pid() returns false for anything that is
-//  not a charged pion, so it must be restricted to {211,-211}.
+//  numbers are meaningless: e.g. chi2pid() also rejects every neutron
+//  (chi2 = 9999), so it must be restricted to the PIDs production applies it to.
+//  Every group except "composite" and "whatif" is the production stack; when
+//  you change filter_particles, change the registry to match (the report's
+//  "registry reproduces ALL cuts" line tells you if they have drifted apart).
 // ===========================================================================
 namespace {
 
@@ -80,84 +86,108 @@ std::vector<CutProbe> build_cut_registry() {
     probes.push_back(CutProbe{name, group, pids, ALL_REGIONS, cut});
   };
 
+  // PIDs that get each shared cut in filter_particles / apply_*_cuts
+  const std::vector<int> VZ_PIDS   = {11,-11,211,-211,321,-321,2212,-2212,22,2112};
+  const std::vector<int> BETA_PIDS = {11,-11,22};
+  const std::vector<int> DC_PIDS   = {11,211,-211,321,-321,2212};
+
   // --- applied to every particle, inside filter_particles -------------------
-  add_simple("global", "theta_range_2_125", ALL_PIDS, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.thetaRangeCut(p); });
-  add_simple("global", "FT_e_gamma_only",   ALL_PIDS, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.FTLeptonPhotonCut(p); });
-  add_simple("global", "p_max_10.6",        ALL_PIDS, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.maxPCut(p); });
-  add_simple("global", "unknown_pid_reject", {0},     ALL_REGIONS,
-             [](CM&, const part&){ return false; });  // `case 0:` in filter_particles
-  add_simple("global", "is_in_FD",             ALL_PIDS, ALL_REGIONS,
+  add_simple("global", "is_in_FD_5_35",       ALL_PIDS, ALL_REGIONS,
              [](CM& cm, const part& p){ return cm.is_in_FD(p); });
+  add_simple("global", "FT_e_gamma_only",     ALL_PIDS, ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.FTLeptonPhotonCut(p); });
+  add_simple("global", "p_max_10.6",          ALL_PIDS, ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.maxPCut(p); });
+  add_simple("global", "vT_max_20cm",         ALL_PIDS, ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.VrCut_outliers(p); });
+  add_simple("global", "unknown_pid_reject",  {0},      ALL_REGIONS,
+             [](CM&, const part&){ return false; });  // `case 0:` in filter_particles
+  add_simple("global", "deuteron_reject",     {45},     ALL_REGIONS,
+             [](CM&, const part&){ return false; });  // `case 45:` in filter_particles
+
+  // --- outlier cuts shared by several species (inside the apply_*_cuts) -----
+  add_simple("vertex", "vz_outlier_-40_30",   VZ_PIDS,   ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.VzCut_outliers(p); });
+  add_simple("vertex", "beta_outlier_0_2",    BETA_PIDS, ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.betaCut_outlier(p); });
+
+  // --- drift-chamber fiducial (e-, pi+-, K+-, p; not pbar) ------------------
+  add_simple("DC", "DC_fiducial",             DC_PIDS,   IN_FD_ONLY,
+             [](CM& cm, const part& p){ return cm.DC_fiducial_cut(p); });
 
   // --- electron cuts (apply_electron_cuts) ---------------------------------
-  add_simple("electron", "DC_fiducial",  {11}, IN_FD_ONLY,
-             [](CM& cm, const part& p){ return cm.DC_fiducial_cut(p); });
-  add_simple("electron", "EleSampFrac",  {11}, IN_FD_ONLY,
+  add_simple("electron", "EleSampFrac",       {11},      IN_FD_ONLY,
              [](CM& cm, const part& p){ return cm.EleSampFrac_pass2(p); });
-  add_simple("electron", "minEpcal",     {11}, IN_FD_ONLY,
-             [](CM& cm, const part& p){ return cm.minEpcal(p); });
-  add_simple("electron", "caloEdges",    {11}, IN_FD_ONLY,
+  add_simple("electron", "caloEdges",         {11},      IN_FD_ONLY,
              [](CM& cm, const part& p){ return cm.caloEdges(p, 0); });
-  add_simple("electron", "leptonBetaCut", {11}, IN_FD_ONLY,
-             [](CM& cm, const part& p){ return cm.leptonBetaCut(p); });
-  add_simple("electron", "VzCut",        {11}, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.VzCut(p); });
 
-  // --- positron cuts (case -11 in filter_particles) ------------------------
-  add_simple("positron", "leptonBetaCut", {-11}, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.leptonBetaCut(p); });
-
-  // --- charged pion cuts (apply_pion_cuts) ---------------------------------
-  add_simple("pion", "DC_fiducial",     {211,-211}, IN_FD_ONLY,
-             [](CM& cm, const part& p){ return cm.DC_fiducial_cut(p); });
-  add_simple("pion", "chi2pid_3sigma",  {211,-211}, ALL_REGIONS,
+  // --- chi2pid: pions momentum-dependent (apply_pion_cuts), other charged
+  //     hadrons |chi2| < 3 (apply_charged_hadron_cuts, case -2212) ----------
+  add_simple("chi2pid", "pion_chi2pid_0",     {211,-211}, ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.chi2pid(p, 0); });
+  add_simple("chi2pid", "hadron_chi2_3sigma", {321,-321,2212,-2212}, ALL_REGIONS,
              [](CM& cm, const part& p){ return cm.chi2pid(p, 2); });
-  add_with_electron("pion", "vz_e_pi",  {211,-211}, ALL_REGIONS,
-             [](CM& cm, const part& p, const part& e){ return cm.vz_e_pi(p, e); });
 
   // --- photon cuts (apply_photon_cuts) ------------------------------------
-  add_simple("photon", "photonBetaCut", {22}, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.photonBetaCut(p); });
-  add_simple("photon", "caloEdges",     {22}, IN_FD_ONLY,
-             [](CM& cm, const part& p){ return cm.caloEdges(p, 0); });
-  add_simple("photon", "minEpcal",      {22}, IN_FD_ONLY,
+  add_simple("photon", "caloEdges_14cm",      {22},      IN_FD_ONLY,
+             [](CM& cm, const part& p){ return cm.caloEdges(p, 1); });
+  add_simple("photon", "minEpcal",            {22},      IN_FD_ONLY,
              [](CM& cm, const part& p){ return cm.minEpcal(p); });
-  add_with_electron("photon", "photonElectronAngle", {22}, ALL_REGIONS,
-             [](CM& cm, const part& p, const part& e){ return cm.photonElectronAngle(p, e); });
-
-  // --- neutron cuts (apply_neutron_cuts) ----------------------------------
-  add_simple("neutron", "minNeutronEnergy", {2112}, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.minNeutronEnergy(p); });
-  add_simple("neutron", "caloEdges",        {2112}, IN_FD_ONLY,
-             [](CM& cm, const part& p){ return cm.caloEdges(p, 0); });
 
   // --- whole per-PID groups, for cross-checking the single cuts above ------
   add_simple("composite", "apply_electron_cuts", {11}, ALL_REGIONS,
              [](CM& cm, const part& p){ return cm.apply_electron_cuts(p); });
   add_group("composite", "apply_pion_cuts", {211,-211},
             [](CM& cm, const part& p, const part& e, bool found){ return cm.apply_pion_cuts(p, e, found); });
+  add_simple("composite", "apply_charged_hadron_cuts", {321,-321,2212}, ALL_REGIONS,
+             [](CM& cm, const part& p){ return cm.apply_charged_hadron_cuts(p); });
   add_group("composite", "apply_photon_cuts", {22},
             [](CM& cm, const part& p, const part& e, bool found){ return cm.apply_photon_cuts(p, e, found); });
-  add_simple("composite", "apply_neutron_cuts", {2112}, ALL_REGIONS,
-             [](CM& cm, const part& p){ return cm.apply_neutron_cuts(p); });
 
-  // --- defined in CutManager but NOT applied by production ----------------
-  //     uncomment to see what turning one on would cost
-  // add_simple("whatif", "minEleMomentum", {11},       ALL_REGIONS,
+  // --- what-if: other windows for the vertex outlier cuts -------------------
+  auto vz_window = [](double lo, double hi) {
+    return [lo, hi](CM&, const part& p){ return lo < p.vz && p.vz < hi; };
+  };
+  auto vT_max = [](double r) {
+    return [r](CM&, const part& p){ return p.vx*p.vx + p.vy*p.vy < r*r; };
+  };
+  add_simple("whatif", "vz_-30_25",   VZ_PIDS,  ALL_REGIONS, vz_window(-30, 25));
+  add_simple("whatif", "vz_-50_40",   VZ_PIDS,  ALL_REGIONS, vz_window(-50, 40));
+  add_simple("whatif", "vT_max_15cm", ALL_PIDS, ALL_REGIONS, vT_max(15));
+  add_simple("whatif", "vT_max_25cm", ALL_PIDS, ALL_REGIONS, vT_max(25));
+  add_simple("whatif", "vT_max_30cm", ALL_PIDS, ALL_REGIONS, vT_max(30));
+
+  // --- what-if: cuts defined in CutManager but NOT applied by production -----
+  //     uncomment to see what turning one back on would cost
+  // add_simple("whatif", "photonBetaCut_0.9_1.1", {22},   ALL_REGIONS,
+  //            [](CM& cm, const part& p){ return cm.photonBetaCut(p); });
+  // add_simple("whatif", "leptonBetaCut_0.8_1.2", {11,-11}, ALL_REGIONS,
+  //            [](CM& cm, const part& p){ return cm.leptonBetaCut(p); });
+  // add_simple("whatif", "electron_VzCut_target", {11},   ALL_REGIONS,
+  //            [](CM& cm, const part& p){ return cm.VzCut(p); });
+  // add_simple("whatif", "electron_minEpcal",     {11},   IN_FD_ONLY,
+  //            [](CM& cm, const part& p){ return cm.minEpcal(p); });
+  // add_simple("whatif", "minNeutronEnergy",      {2112}, ALL_REGIONS,
+  //            [](CM& cm, const part& p){ return cm.minNeutronEnergy(p); });
+  // add_simple("whatif", "theta_range_2_125",     ALL_PIDS, ALL_REGIONS,
+  //            [](CM& cm, const part& p){ return cm.thetaRangeCut(p); });
+  // add_with_electron("whatif", "vz_e_pi",        {211,-211}, ALL_REGIONS,
+  //            [](CM& cm, const part& p, const part& e){ return cm.vz_e_pi(p, e); });
+  // add_with_electron("whatif", "photonElectronAngle", {22}, ALL_REGIONS,
+  //            [](CM& cm, const part& p, const part& e){ return cm.photonElectronAngle(p, e); });
+  // add_simple("whatif", "minEleMomentum",        {11},       ALL_REGIONS,
   //            [](CM& cm, const part& p){ return cm.minEleMomentum(p); });
-  // add_simple("whatif", "minPiMomentum",  {211,-211}, ALL_REGIONS,
+  // add_simple("whatif", "minPiMomentum",         {211,-211}, ALL_REGIONS,
   //            [](CM& cm, const part& p){ return cm.minPiMomentum(p); });
-  // add_simple("whatif", "Ele3calo",       {11},       ALL_REGIONS,
+  // add_simple("whatif", "Ele3calo",              {11},       ALL_REGIONS,
   //            [](CM& cm, const part& p){ return cm.Ele3calo(p); });
-  // add_simple("whatif", "photonMinEtot",  {22},       ALL_REGIONS,
+  // add_simple("whatif", "photonMinEtot",         {22},       ALL_REGIONS,
   //            [](CM& cm, const part& p){ return cm.photonMinEtot(p); });
-  // add_simple("whatif", "caloEdges_tight", {11},      IN_FD_ONLY,
-  //            [](CM& cm, const part& p){ return cm.caloEdges(p, 1); });
-  // add_simple("whatif", "chi2pid_strict", {211,-211}, ALL_REGIONS,
-  //            [](CM& cm, const part& p){ return cm.chi2pid(p, 1); });
+
+  // Composite and what-if probes are not part of the production stack, so they
+  // stay out of the N-1 bookkeeping and the filter_particles cross-check.
+  for (auto& probe : probes)
+    probe.in_stack = probe.group != "composite" && probe.group != "whatif";
 
   return probes;
 }
@@ -174,8 +204,8 @@ std::vector<CutProbe> build_cut_registry() {
 //  comma-separated group or "group/name" entries from the registry above, or
 //  "ALL" for the full production stack. Examples:
 //      "ALL"                    every event production would write as npflow==0
-//      "global,composite"       the registry's equivalent of the full stack
-//      "photon/photonBetaCut"   events emptied by that one cut alone
+//      "vertex"                 events emptied by the vz and beta outlier cuts together
+//      "photon/caloEdges_14cm"  events emptied by that one cut alone
 int cut_study(const char* hipoFile = "",
               const char* outDir   = "plots/cut_study",
               const int   maxEvents = 100000,
