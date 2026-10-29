@@ -11,13 +11,15 @@
 
 // Write one flat tree entry per reco particle, BEFORE any cut, with the raw
 // variables behind the calorimeter-edge, v_z / v_T outlier and chi2pid cuts,
-// the calorimeter hit positions, the matched MC truth and two pass flags, so
+// the calorimeter hit positions, the matched MC truth and three pass flags, so
 // edge_outlier_study.ipynb can try other thresholds without rerunning the hipo
 // step. A calorimeter layer with no hit has <layer>_e == 0 and x/y/z/lv/lw 0.
 //
-//   pass_prod  : kept by CutManager::filter_particles (the production cuts)
-//   pass_loose : kept by the production cuts with chi2pid, the v_z / v_T
-//                outlier cuts and the e- / gamma calorimeter edge cuts switched off
+//   pass_prod   : kept by CutManager::filter_particles (the production cuts)
+//   pass_loose  : kept by the production cuts with chi2pid, the v_z / v_T
+//                 outlier cuts and the e- / gamma calorimeter edge cuts switched off
+//   pass_nobeta : kept by the production cuts with the e+- / gamma beta outlier
+//                 cut (0 < beta < 2) switched off
 //
 // Truth (truepid, truep, trueE) is the MC particle closest in angle
 // (CLAS12Ana::match_mc_to_reco: dR = sqrt((dtheta/2deg)^2 + (dphi/4deg)^2) < 1);
@@ -40,7 +42,7 @@ int edge_outlier_study(const char* hipoFile  = "",
     // The branches read straight from q, which is set to each particle before Fill()
     part q;
     int  run, evnum;
-    bool pass_prod, pass_loose;
+    bool pass_prod, pass_loose, pass_nobeta;
     tree->Branch("run", &run, "run/I");
     tree->Branch("evnum", &evnum, "evnum/I");
     tree->Branch("pid", &q.pid, "pid/I");
@@ -61,6 +63,7 @@ int edge_outlier_study(const char* hipoFile  = "",
         tree->Branch(branch.first, branch.second, (std::string(branch.first) + "/D").c_str());
     tree->Branch("pass_prod", &pass_prod, "pass_prod/O");
     tree->Branch("pass_loose", &pass_loose, "pass_loose/O");
+    tree->Branch("pass_nobeta", &pass_nobeta, "pass_nobeta/O");
 
     // Configure CLAS12 Reader and HipoChain
     // -------------------------------------
@@ -87,7 +90,7 @@ int edge_outlier_study(const char* hipoFile  = "",
     };
 
     int  whileidx = 0;
-    long n_particles = 0, n_prod = 0, n_loose = 0, n_matched = 0;
+    long n_particles = 0, n_prod = 0, n_loose = 0, n_nobeta = 0, n_matched = 0;
 
     while (_chain.Next() == true && (whileidx < maxEvents || maxEvents < 0)) {
         if (whileidx % 10000 == 0 && whileidx != 0) {
@@ -121,17 +124,25 @@ int edge_outlier_study(const char* hipoFile  = "",
         for (auto& p : loose) { p.chi2 = 0; p.vx = 0; p.vy = 0; p.vz = 0; p.pcal_lv = 100; p.pcal_lw = 100; }
         std::set<int> kept_loose = kept_pindex(_cm.filter_particles(loose));
 
+        // Production cuts with the e+- / gamma beta outlier cut switched off: betaCut_outlier is
+        // the only cut filter_particles applies that reads beta, and it always accepts beta = 1
+        std::vector<part> nobeta = vec_particles;
+        for (auto& p : nobeta) p.beta = 1;
+        std::set<int> kept_nobeta = kept_pindex(_cm.filter_particles(nobeta));
+
         run   = event_info.run;
         evnum = event_info.evnum;
         for (const auto& particle : vec_particles) {
             q = particle;
-            pass_prod  = kept_prod.count(q.pindex) > 0;
-            pass_loose = kept_loose.count(q.pindex) > 0;
+            pass_prod   = kept_prod.count(q.pindex) > 0;
+            pass_loose  = kept_loose.count(q.pindex) > 0;
+            pass_nobeta = kept_nobeta.count(q.pindex) > 0;
             tree->Fill();
 
             n_particles++;
             n_prod    += pass_prod;
             n_loose   += pass_loose;
+            n_nobeta  += pass_nobeta;
             n_matched += q.truepid != -999;
         }
     }
@@ -144,6 +155,7 @@ int edge_outlier_study(const char* hipoFile  = "",
     std::cout << "  events read         : " << whileidx << "\n"
               << "  reco particles      : " << n_particles << "\n"
               << "  pass_loose          : " << n_loose << "  (" << pct(n_loose) << "%)\n"
+              << "  pass_nobeta         : " << n_nobeta << "  (" << pct(n_nobeta) << "%)\n"
               << "  pass_prod           : " << n_prod << "  (" << pct(n_prod) << "%)\n"
               << "  matched to MC truth : " << n_matched << "  (" << pct(n_matched) << "%)"
               << (is_real_data ? "  -- real data, no truth" : "") << "\n"
