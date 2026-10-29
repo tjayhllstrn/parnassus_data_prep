@@ -54,6 +54,15 @@ This one must read a raw `.hipo`, not a prepped `.root` — the prepped trees ar
 registry block at the top of `macros/cut_study.C` (one line per cut); the counting machinery lives in
 `src/CutStudy.h`. Results go to stdout plus `<outDir>/<hipo stem>/summary.csv` and `removed_by_pid.csv`.
 
+Tune the calorimeter-edge and v_z / v_T outlier cuts without rerunning the hipo step: write one flat `particles`
+tree entry per reco particle (before cuts) with the cut variables, calorimeter hit positions, angle-matched truth
+(`truepid/truep/trueE`, from `match_mc_to_reco`) and two flags — `pass_prod` (`filter_particles`) and `pass_loose` (production minus chi2pid
+and the v_z / v_T outlier cuts). Also reads a raw `.hipo`; `edge_outlier_study.ipynb` plots it (hadron energy
+resolution vs. edge cut, chi2pid vs. outlier cuts, calorimeter hit maps per selection):
+```
+root -l -b -q 'macros/edge_outlier_study.C("<file or dir/*.hipo>","plots/edge_outlier_study/study.root",-1)'
+```
+
 `hipo2tree_parnassus.C` writes the v7 `evt_tree` layout directly. To convert processed files made before that
 (e.g. v5) to v7 without rerunning the hipo step, build it from their `reco_EventTree`/`mc_EventTree`
 (adds `pflow_p`/`truth_p`, unfolds `truth_theta`, applies the e+/e- beta cut).
@@ -85,7 +94,8 @@ macro once (e.g. `plot_prepped_data.C`) — they are gitignored and safe to dele
 
 - **`CLAS12Ana`** (`CLAS12Ana.h/.C`) — the core per-event analysis driver: loads reco/MC particles, finds the
   scattered electron, fills DIS and dihadron kinematic variables, and matches MC truth particles to reco
-  particles (`match_mc_to_reco`, `match_mc_to_reco_mcmatch`). Also contains dihadron combinatorics helpers
+  particles (`match_mc_to_reco`: best angular match; `match_mc_to_reco_mcmatch` is broken — it compares
+  MC::RecMatch's MC::Particle rows against MC::Lund indices). Also contains dihadron combinatorics helpers
   (`dihadron_idxs`, `unique_combinations`, `remove_duplicates`) for building hadron pairs from a particle list.
 - **`CutManager`** (`CutManager.h/.C`) — encapsulates all detector/PID fiducial cuts (DC fiducial cuts in
   XY and theta/phi parameterizations, calorimeter sampling-fraction cuts, chi2pid, vertex cuts, etc.),

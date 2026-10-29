@@ -11,15 +11,17 @@
 
 // Write one flat tree entry per reco particle, BEFORE any cut, with the raw
 // variables behind the calorimeter-edge, v_z / v_T outlier and chi2pid cuts,
-// the matched MC truth and two pass flags, so edge_outlier_study.ipynb can try
-// other thresholds without rerunning the hipo step.
+// the calorimeter hit positions, the matched MC truth and two pass flags, so
+// edge_outlier_study.ipynb can try other thresholds without rerunning the hipo
+// step. A calorimeter layer with no hit has <layer>_e == 0 and x/y/z/lv/lw 0.
 //
 //   pass_prod  : kept by CutManager::filter_particles (the production cuts)
 //   pass_loose : kept by the production cuts with chi2pid and the v_z / v_T
 //                outlier cuts switched off
 //
-// Truth (truepid, truep, trueE) comes from the MC::RecMatch bank; it is -999
-// for unmatched particles and for real data.
+// Truth (truepid, truep, trueE) is the MC particle closest in angle
+// (CLAS12Ana::match_mc_to_reco: dR = sqrt((dtheta/2deg)^2 + (dphi/4deg)^2) < 1);
+// it is -999 for unmatched particles and for real data.
 //
 // root -l -b -q 'macros/edge_outlier_study.C("prepped_data/clasdis_rga_fa18_inb_45nA_10604MeV-0001.hipo","plots/edge_outlier_study/study.root",-1)'
 
@@ -51,6 +53,9 @@ int edge_outlier_study(const char* hipoFile  = "",
         {"pcal_lv", &q.pcal_lv}, {"pcal_lw", &q.pcal_lw},
         {"ecin_lv", &q.ecin_lv}, {"ecin_lw", &q.ecin_lw},
         {"ecout_lv", &q.ecout_lv}, {"ecout_lw", &q.ecout_lw},
+        {"pcal_x", &q.pcal_x}, {"pcal_y", &q.pcal_y}, {"pcal_z", &q.pcal_z},
+        {"ecin_x", &q.ecin_x}, {"ecin_y", &q.ecin_y}, {"ecin_z", &q.ecin_z},
+        {"ecout_x", &q.ecout_x}, {"ecout_y", &q.ecout_y}, {"ecout_z", &q.ecout_z},
         {"truep", &q.truep}, {"trueE", &q.trueE}};
     for (auto& branch : doubles)
         tree->Branch(branch.first, branch.second, (std::string(branch.first) + "/D").c_str());
@@ -103,7 +108,7 @@ int edge_outlier_study(const char* hipoFile  = "",
 
         if (!is_real_data) {
             vec_mcparticles = clas12ana.load_mc_particles(_c12);
-            clas12ana.match_mc_to_reco_mcmatch(vec_particles, vec_mcparticles, _c12);
+            clas12ana.match_mc_to_reco(vec_particles, vec_mcparticles);
         }
 
         std::set<int> kept_prod = kept_pindex(_cm.filter_particles(vec_particles));

@@ -576,12 +576,21 @@ void CLAS12Ana::match_mc_to_reco(std::vector<part>& vec_particles,
                                       std::vector<part>& vec_mcparticles){
     
     for (int i=0; i < vec_particles.size(); i++){
-      for (int j=0; j < vec_mcparticles.size(); j++){
-        float dth = abs(vec_particles[i].theta - vec_mcparticles[j].truetheta)*180/PI;
-        float dphi = abs(vec_particles[i].phi - vec_mcparticles[j].truephi)*180/PI;
-        float dE = abs(vec_particles[i].E - vec_mcparticles[j].trueE);
-        
-        if (dth<2 && (dphi<4 || abs(dphi-2*PI)<4) && dE<1){
+      // Pair with the MC particle closest in angle, dR = sqrt((dtheta/2deg)^2 + (dphi/4deg)^2), if dR < 1
+      int j = -1;
+      float best_dR = 1;
+      for (int k=0; k < vec_mcparticles.size(); k++){
+        float dth = abs(vec_particles[i].theta - vec_mcparticles[k].truetheta)*180/PI;
+        float raw = vec_particles[i].phi - vec_mcparticles[k].truephi;
+        float dphi = fabs(atan2(sin(raw), cos(raw)))*180/PI;
+        float dR = sqrt(pow(dth/2,2) + pow(dphi/4,2));
+        if (dR < best_dR){
+          best_dR = dR;
+          j = k;
+        }
+      }
+
+      if (j != -1){
 	  // Perform Pairing
 	  vec_particles[i].truepx = vec_mcparticles[j].truepx;
 	  vec_particles[i].truepy = vec_mcparticles[j].truepy;
@@ -667,16 +676,16 @@ void CLAS12Ana::match_mc_to_reco(std::vector<part>& vec_particles,
 
     vec_mcparticles[j].nphe_ltcc = vec_particles[i].nphe_ltcc;
     vec_mcparticles[j].nphe_htcc = vec_particles[i].nphe_htcc;
-
-	  break;
 	}
-      }
     }
     
     
 }
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// BROKEN -- use match_mc_to_reco. MC::RecMatch's mcindex is a row of MC::Particle, but part.mcindex is the MC::Lund
+// index column (clas12root's mcparts() is MC::Lund), which also counts the non-final-state Lund lines, so the
+// lookup below pairs most reco particles with the wrong MC particle or none.
 void CLAS12Ana::match_mc_to_reco_mcmatch(std::vector<part>& vec_particles,
                                          std::vector<part>& vec_mcparticles,
                                          const std::unique_ptr<clas12::clas12reader>& _c12,
