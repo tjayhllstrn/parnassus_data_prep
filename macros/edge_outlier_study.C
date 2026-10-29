@@ -16,8 +16,8 @@
 // step. A calorimeter layer with no hit has <layer>_e == 0 and x/y/z/lv/lw 0.
 //
 //   pass_prod  : kept by CutManager::filter_particles (the production cuts)
-//   pass_loose : kept by the production cuts with chi2pid and the v_z / v_T
-//                outlier cuts switched off
+//   pass_loose : kept by the production cuts with chi2pid, the v_z / v_T
+//                outlier cuts and the e- / gamma calorimeter edge cuts switched off
 //
 // Truth (truepid, truep, trueE) is the MC particle closest in angle
 // (CLAS12Ana::match_mc_to_reco: dR = sqrt((dtheta/2deg)^2 + (dphi/4deg)^2) < 1);
@@ -113,11 +113,12 @@ int edge_outlier_study(const char* hipoFile  = "",
 
         std::set<int> kept_prod = kept_pindex(_cm.filter_particles(vec_particles));
 
-        // Production cuts with chi2pid and the v_z / v_T outlier cuts switched off: give a
-        // copy a chi2 and vertex those cuts always accept. No other cut that filter_particles
-        // applies reads chi2, vx, vy or vz.
+        // Production cuts with chi2pid, the v_z / v_T outlier cuts and the e- / gamma calorimeter
+        // edge cuts switched off: give a copy a chi2, vertex and PCAL edge distance those cuts
+        // always accept. No other cut that filter_particles applies reads chi2, vx, vy, vz,
+        // pcal_lv or pcal_lw.
         std::vector<part> loose = vec_particles;
-        for (auto& p : loose) { p.chi2 = 0; p.vx = 0; p.vy = 0; p.vz = 0; }
+        for (auto& p : loose) { p.chi2 = 0; p.vx = 0; p.vy = 0; p.vz = 0; p.pcal_lv = 100; p.pcal_lw = 100; }
         std::set<int> kept_loose = kept_pindex(_cm.filter_particles(loose));
 
         run   = event_info.run;

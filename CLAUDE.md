@@ -56,8 +56,8 @@ registry block at the top of `macros/cut_study.C` (one line per cut); the counti
 
 Tune the calorimeter-edge and v_z / v_T outlier cuts without rerunning the hipo step: write one flat `particles`
 tree entry per reco particle (before cuts) with the cut variables, calorimeter hit positions, angle-matched truth
-(`truepid/truep/trueE`, from `match_mc_to_reco`) and two flags — `pass_prod` (`filter_particles`) and `pass_loose` (production minus chi2pid
-and the v_z / v_T outlier cuts). Also reads a raw `.hipo`; `edge_outlier_study.ipynb` plots it (hadron energy
+(`truepid/truep/trueE`, from `match_mc_to_reco`) and two flags — `pass_prod` (`filter_particles`) and `pass_loose` (production minus chi2pid,
+the v_z / v_T outlier cuts and the e⁻ / γ calorimeter edge cuts). Also reads a raw `.hipo`; `edge_outlier_study.ipynb` plots it (hadron energy
 resolution vs. edge cut, chi2pid vs. outlier cuts, calorimeter hit maps per selection):
 ```
 root -l -b -q 'macros/edge_outlier_study.C("<file or dir/*.hipo>","plots/edge_outlier_study/study.root",-1)'
