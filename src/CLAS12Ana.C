@@ -679,7 +679,8 @@ void CLAS12Ana::match_mc_to_reco(std::vector<part>& vec_particles,
 // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CLAS12Ana::match_mc_to_reco_mcmatch(std::vector<part>& vec_particles,
                                          std::vector<part>& vec_mcparticles,
-                                         const std::unique_ptr<clas12::clas12reader>& _c12){
+                                         const std::unique_ptr<clas12::clas12reader>& _c12,
+                                         bool verbose){
 
     auto mcpbank = _c12->mcparts();
     if (!mcpbank) return;
@@ -814,20 +815,22 @@ void CLAS12Ana::match_mc_to_reco_mcmatch(std::vector<part>& vec_particles,
         int vec_rec = recIt->second;
         int vec_mc = mcIt->second;
         
-        // Perform diagnostic check
-        float dth = abs(vec_particles[vec_rec].theta - vec_mcparticles[vec_mc].truetheta) * 180 / PI;
-        float raw = vec_particles[vec_rec].phi - vec_mcparticles[vec_mc].truephi;
-        float dphi = fabs(atan2(sin(raw), cos(raw))) * 180.0 / PI;
-        float dE = abs(vec_particles[vec_rec].E - vec_mcparticles[vec_mc].trueE);
-        
-        if (!(dth < 2 && dphi < 4 && dE < 1)) {
-            std::cout << "\e[1;31mWARNING: Large mismatch in MC-REC match " << k 
-                      << ": pindex " << pindex << " mcindex " << mcindex
-                      << " dtheta " << dth << " dphi " << dphi << " dE " << dE << "\e[0m" << std::endl;
-        } else {
-            std::cout << "\e[1;32mMatch " << k << ": pindex " << pindex << " mcindex " << mcindex
-                      << " quality " << quality << " dtheta " << dth << " dphi " << dphi << " dE " << dE 
-                      << "\e[0m" << std::endl;
+        // Perform diagnostic check (printed for every match, so only when asked for)
+        if (verbose) {
+            float dth = abs(vec_particles[vec_rec].theta - vec_mcparticles[vec_mc].truetheta) * 180 / PI;
+            float raw = vec_particles[vec_rec].phi - vec_mcparticles[vec_mc].truephi;
+            float dphi = fabs(atan2(sin(raw), cos(raw))) * 180.0 / PI;
+            float dE = abs(vec_particles[vec_rec].E - vec_mcparticles[vec_mc].trueE);
+
+            if (!(dth < 2 && dphi < 4 && dE < 1)) {
+                std::cout << "\e[1;31mWARNING: Large mismatch in MC-REC match " << k
+                          << ": pindex " << pindex << " mcindex " << mcindex
+                          << " dtheta " << dth << " dphi " << dphi << " dE " << dE << "\e[0m" << std::endl;
+            } else {
+                std::cout << "\e[1;32mMatch " << k << ": pindex " << pindex << " mcindex " << mcindex
+                          << " quality " << quality << " dtheta " << dth << " dphi " << dphi << " dE " << dE
+                          << "\e[0m" << std::endl;
+            }
         }
         
         // Copy truth variables from matched MC particle to reconstructed particle

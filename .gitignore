@@ -1,7 +1,7 @@
 .ipynb_checkpoints
 plots/*
 prepped_data/*
-*.ipynb
+
 macros/*.d
 macros/*.so
 macros/*.pcm
