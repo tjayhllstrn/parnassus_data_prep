@@ -182,11 +182,21 @@ void draw_comparison_plot(TTree* tree,
     TCanvas canvas(("c_" + output_base).c_str(), title.c_str(), 1200, 900);
     canvas.cd();
 
-    truth_hist->SetTitle(title.c_str());
-    truth_hist->GetXaxis()->SetTitle(x_label.c_str());
-    truth_hist->GetYaxis()->SetTitle("Normalized entries");
-    truth_hist->Draw("hist");
-    reco_hist->Draw("hist same");
+    if (truth_branch == "truth_phi" || reco_branch == "pflow_phi") {
+        reco_hist->SetTitle(title.c_str());
+        reco_hist->GetXaxis()->SetTitle(x_label.c_str());
+        reco_hist->GetYaxis()->SetTitle("Normalized entries");
+        reco_hist->Draw("hist");
+        truth_hist->Draw("hist same");
+    }
+    else {
+
+        truth_hist->SetTitle(title.c_str());
+        truth_hist->GetXaxis()->SetTitle(x_label.c_str());
+        truth_hist->GetYaxis()->SetTitle("Normalized entries");
+        truth_hist->Draw("hist");
+        reco_hist->Draw("hist same");
+    }
 
     TLegend legend(0.68, 0.78, 0.90, 0.90);
     legend.AddEntry(reco_hist.get(), (reco_branch).c_str(),"f");
@@ -195,7 +205,7 @@ void draw_comparison_plot(TTree* tree,
 
     canvas.SaveAs((output_base + ".png").c_str());
     save_plot_objects(output_base, reco_hist.get(), truth_hist.get(), &legend);
-    // canvas.SaveAs((output_base + ".pdf").c_str());
+    canvas.SaveAs((output_base + ".pdf").c_str());
 }
 void draw_comparison_plot(TTree* mc_tree, TTree* reco_tree,
                           const std::string& reco_branch,
@@ -242,7 +252,7 @@ void draw_comparison_plot(TTree* mc_tree, TTree* reco_tree,
 
     canvas.SaveAs((output_base + ".png").c_str());
     save_plot_objects(output_base, reco_hist.get(), truth_hist.get(), &legend);
-    // canvas.SaveAs((output_base + ".pdf").c_str());
+    canvas.SaveAs((output_base + ".pdf").c_str());
 }
 
 void label_integer_bins(TH1D* hist, const std::map<int, long long>& counts) {
