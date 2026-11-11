@@ -10,3 +10,11 @@ HipoSkimmer*
 *.pdf
 *.png
 macros/*ACLiC*
+
+# editor backups, Python caches, local assistant files
+*~
+__pycache__/
+*.pyc
+.claude/
+CLAUDE.md
+skills/

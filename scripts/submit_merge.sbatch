@@ -15,11 +15,11 @@
 #   task 1 -> v5_test.root   (expects  16 input files)
 #
 # Submit both:
-#   sbatch scripts/submit_merge_evt_tree.sh
+#   sbatch scripts/submit_merge.sbatch
 #
 # Submit with distinct job names (also gives distinct farm_out filenames):
-#   sbatch --job-name=merge_v5_train --array=0 scripts/submit_merge_evt_tree.sh
-#   sbatch --job-name=merge_v5_test  --array=1 scripts/submit_merge_evt_tree.sh
+#   sbatch --job-name=merge_v5_train --array=0 scripts/submit_merge.sbatch
+#   sbatch --job-name=merge_v5_test  --array=1 scripts/submit_merge.sbatch
 
 set -euo pipefail
 

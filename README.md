@@ -1,74 +1,140 @@
 # parnassus_data_prep
 
-This repository contains a CLAS12 data-preparation pipeline for turning raw `.hipo` event files into flat ROOT `TTree`s for downstream analysis and ML workflows, especially the Parnassus particle-flow pipeline.
+ROOT macros that turn CLAS12 HIPO files into the flat ROOT trees used to train and evaluate the
+Parnassus fast simulation of CLAS12 RG-A (core repository: TODO). They read the reconstructed
+particles and the generator-level (`MC::Lund`) particles of `clasdis` Monte Carlo, apply the
+particle cuts listed below, and write one `evt_tree` entry per event.
 
-The code is organized as ROOT macros in `macros/` that `#include` the analysis implementation from `src/`. There is no separate build system; the macros are run directly with `root -l -b -q`, typically inside the CLAS12 ROOT/apptainer environment.
+The tag `paper-v1` is the version that goes with the paper. No data files are included; the
+`clasdis` HIPO files are available to CLAS Collaboration members on the JLab farm.
 
-## Repository purpose
+## Layout
 
-The main pipeline reads reconstructed and Monte Carlo truth particle banks from CLAS12 HIPO files, computes DIS/SIDIS kinematics, applies detector and PID cuts, and writes ROOT trees for later plotting, validation, and machine-learning use.
+```text
+macros/               ROOT entry points; they #include the analysis code in src/
+src/                  particle loading (CLAS12Ana), cuts (CutManager), kinematics, tree writers
+scripts/              SLURM jobs for the JLab farm, the merge wrapper, a plotting script
+paper_plotting.ipynb  reconstructed vs generated theta and phi figure
+```
 
-Key outputs include:
-- `reco_EventTree` for reconstructed particles
-- `mc_EventTree` for Monte Carlo truth particles
-- `evt_tree` for the ML-facing Parnassus tree
+## Environment
 
-Supporting macros in this repo also provide quick validation and plotting of the prepped ROOT files.
+The macros need ROOT with the CLAS12 HIPO reader (`clas12root`). The v8 samples were made on the
+JLab farm (ifarm) with clas12root (v6.38.04). There is no build step: the macros are
+run with  `clas12root -l -b -q` and compiled on the fly.
+
+The SLURM scripts contain JLab farm paths, the `clas12` account and the author's user directories;
+edit them before running anywhere else.
+
+## How the v8 samples were made
+
+The input is `clasdis` Monte Carlo for RG-A Fall 2018 inbending, pass-2 reconstruction, 45 nA
+background merging, 10.604 GeV beam:
+
+```text
+/cache/clas12/rg-a/production/montecarlo/clasdis_pass2/fa18_inb/clasdis_rga_fa18_inb_45nA_10604MeV-*.hipo
+```
+
+1. **Convert each HIPO file.** `macros/hipo2tree_parnassus.C` reads one HIPO file and writes
+   `reco_EventTree`, `mc_EventTree` and `evt_tree` (the tree Parnassus reads) to
+   `<output dir>/<file stem>.root`. `scripts/submit_hipo2tree_parnassus.sbatch` runs it as a
+   SLURM array with one task per file; set `--array` to the number of files:
+
+   ```bash
+   sbatch scripts/submit_hipo2tree_parnassus.sbatch <directory with clasdis*.hipo> v8
+   ```
+
+   For a single file:
+
+   ```bash
+   clas12root -l -b -q 'macros/hipo2tree_parnassus.C("<file>.hipo","prepped_data",-1)'
+   ```
+
+   The last argument is the number of events (`-1` for all). A file whose path contains `reco` is
+   treated as real data, and no generator-level particles are written for it.
+
+2. **Merge.** `scripts/merge_evt_tree.sh` (see [Merge script](#merge-script)) concatenates
+   `evt_tree` from a list of files and renumbers `eventNumber` sequentially with
+   `macros/reassign_event_number.C`, since the raw event numbers are only unique within one HIPO
+   file. With `--filterScatE` it keeps only events whose reconstructed scattered electron passes
+   the cuts (`pflow_scatE == 1`). `scripts/submit_merge.sbatch` runs the merge for a train and a
+   test file list on the farm.
+
+| File | Events | Merge | Hipo Files
+|---|---|---|---|
+| `v8_train.root` | 59.0M | `--filterScatE`: every event has a reconstructed scattered electron | files 2-31 |
+| `v8_test.root` | 29.91M | no filter| files 1,32,33 |
+| `pre-filter_train_data_v8.root` | 19.91M | no filter | files 2,3 |
+
+
+## Cuts
+
+`CutManager::filter_particles` (`src/CutManager.C`) cuts the reconstructed particles before they
+are written.
+
+Every particle must satisfy:
+
+- 5° < θ < 35° (Forward Detector acceptance)
+- p ≤ 10.6 GeV
+- transverse vertex √(v<sub>x</sub>² + v<sub>y</sub>²) < 20 cm
+
+On top of that, per species, where "v<sub>z</sub>" means −40 cm < v<sub>z</sub> < 30 cm and "β" means 0 < β < 2:
+
+| Particle | Cuts |
+|---|---|
+| e⁻ | DC fiducial (pass-2 edge distances), pass-2 sampling fraction, PCAL edges (l<sub>v</sub>, l<sub>w</sub> > 9 cm; l<sub>v</sub> > 13.5 cm in sector 4), β, v<sub>z</sub> |
+| e⁺ | β, v<sub>z</sub> |
+| π⁺, π⁻ | DC fiducial, pion χ²<sub>pid</sub> cut (−3C < χ²<sub>pid</sub> < 3C, tighter above 2.44 GeV; C = 0.88 for π⁺, 0.93 for π⁻), v<sub>z</sub> |
+| K⁺, K⁻, p | DC fiducial, abs(χ²<sub>pid</sub>) < 3, v<sub>z</sub> |
+| p̄ | abs(χ²<sub>pid</sub>) < 3, v<sub>z</sub> |
+| γ | PCAL edges (l<sub>v</sub>, l<sub>w</sub> > 14 cm), PCAL energy > 0, β, v<sub>z</sub> |
+| n | v<sub>z</sub> |
+| PID 0 and 45 | removed |
+| any other PID | only the cuts for every particle |
+
+The reconstructed scattered electron is the highest-energy electron, chosen before the cuts. If
+the cuts remove it, the event's DIS variables are reset to −999 and `pflow_scatE` is 0.
+
+At generator level (`CLAS12Ana::load_mc_particles`), the final-state `MC::Lund` particles are kept,
+except electron neutrinos and particles with θ < 1°.
 
 ## Merge script
 
-The script [scripts/merge_evt_tree.sh](scripts/merge_evt_tree.sh) merges only `evt_tree` from an explicit list of ROOT files into a single output ROOT file.
-
-It is intended for cases where you already know exactly which files should be merged and want a simple, safe wrapper around the ROOT macro.
-
-### Syntax
+[scripts/merge_evt_tree.sh](scripts/merge_evt_tree.sh) merges only `evt_tree` from an explicit
+list of ROOT files into one output file:
 
 ```bash
-scripts/merge_evt_tree.sh OUTPUT_FILE [--dry-run] [--max-files N] [--force] FILE1 [FILE2 ...]
+scripts/merge_evt_tree.sh OUTPUT_FILE [--dry-run] [--max-files N] [--force] [--filterScatE] FILE1 [FILE2 ...]
 ```
 
-### Arguments
-
-- `OUTPUT_FILE`: destination ROOT file to create.
-- `--dry-run`: print the resolved input file list and exit without creating output.
-- `--max-files N`: only merge the first `N` input files after shell expansion.
+- `OUTPUT_FILE`: the ROOT file to create.
+- `--dry-run`: print the input file list and exit.
+- `--max-files N`: merge only the first `N` input files.
 - `--force`: overwrite an existing output file.
-- `FILE1 [FILE2 ...]`: explicit input ROOT files to merge. Shell globbing is supported, so `prepped_data/*.root` works.
+- `--filterScatE`: keep only events with `pflow_scatE == 1`.
+- `FILE1 [FILE2 ...]`: the input ROOT files; shell globs such as `prepped_data/*.root` work.
 
-### Examples
-
-Preview the exact files that would be merged:
+For example:
 
 ```bash
 scripts/merge_evt_tree.sh prepped_data/merged_evt_tree.root --dry-run prepped_data/*.root
+scripts/merge_evt_tree.sh prepped_data/merged_evt_tree.root --force --filterScatE prepped_data/*.root
 ```
 
-Merge the first 10 files from a globbed list:
+## Other tools
 
-```bash
-scripts/merge_evt_tree.sh prepped_data/merged_evt_tree.root --max-files 10 --force prepped_data/*.root
-```
+- `macros/plot_prepped_data.C`: reconstructed vs generated kinematics of one prepped file, written
+  to `plots/<file stem>/` as PNG, PDF and the histograms in ROOT files.
+- `paper_plotting.ipynb`: restyles the θ and φ comparison from
+  `plots/<sample>/compare_theta.root` and `compare_phi.root` (written by `plot_prepped_data.C`)
+  for the paper.
+- `scripts/plot_kinematics_per_species.py`: reconstructed vs generated p, θ, φ, v<sub>z</sub> and β per
+  species (needs `uproot`, `awkward` and `matplotlib`).
+- `macros/filter_electrons.C`: drops every event with an electron or positron in `pflow_pdgId`.
 
-Merge a hand-picked list of files:
+Output under `prepped_data/` and `plots/` is not tracked, and neither are ROOT's compiled-macro
+files (`*.so`, `*.d`, `*.pcm`).
 
-```bash
-scripts/merge_evt_tree.sh prepped_data/merged_evt_tree.root --force \
-  prepped_data/file1.root \
-  prepped_data/file2.root \
-  prepped_data/file3.root
-```
+## License
 
-## ROOT environment
-
-Run ROOT macros inside the CLAS12 analysis container or an environment that provides `root` and the CLAS12 libraries. The repository was written to be used with the clas12root/apptainer setup described in `CLAUDE.md`.
-
-## Other useful macros
-
-- `macros/hipo2tree_parnassus.C` converts a HIPO file into the standard prepped ROOT trees.
-- `macros/check_classID.C` checks `evt_tree` for unknown particle class assignments.
-- `macros/plot_prepped_data.C` compares reconstructed and truth kinematics from a prepped file.
-
-## Notes
-
-- Generated data products under `prepped_data/` and `plots/` are treated as reproducible artifacts.
-- ACLiC build products such as `.d`, `.pcm`, and `.so` files are normal ROOT byproducts and can be regenerated.
+MIT; see [LICENSE](LICENSE).
