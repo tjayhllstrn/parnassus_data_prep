@@ -1,7 +1,7 @@
 # parnassus_data_prep
 
 ROOT macros that turn CLAS12 HIPO files into the flat ROOT trees used to train and evaluate the
-Parnassus fast simulation of CLAS12 RG-A (core repository: TODO). They read the reconstructed
+Parnassus fast simulation of CLAS12 RG-A ([core repository](https://github.com/omphalos-mc/parnassus-clas12)). They read the reconstructed
 particles and the generator-level (`MC::Lund`) particles of `clasdis` Monte Carlo, apply the
 particle cuts listed below, and write one `evt_tree` entry per event.
 
